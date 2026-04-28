@@ -1,0 +1,145 @@
+﻿@model EBYS.Models.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "_DashboardLayout";
+}
+
+<div class="ebys-page">
+    <div class="ebys-summarybar">
+        <div class="left">
+            <div class="badge text-bg-light border">
+                <i class="bi bi-shield-check me-1"></i>Dashboard
+            </div>
+            <div class="muted small mt-1">
+                <i class="bi bi-info-circle me-1"></i>Bu ekran JS mock ile çalışır; migration/DB gerekmez.
+            </div>
+        </div>
+
+        <div class="right">
+            <button type="button" class="btn btn-outline-secondary ebys-btn" data-action="refresh">
+                <i class="bi bi-arrow-clockwise me-2"></i>Yenile
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-2">
+        <div class="col-lg-4">
+            <div class="ebys-kpi">
+                <div class="head">
+                    <div class="icon i1"><i class="bi bi-inbox"></i></div>
+                    <div class="meta">
+                        <div class="t">Gelen Kutusu</div>
+                        <div class="s">İmzacı bekleyen</div>
+                    </div>
+                    <span class="badge text-bg-light border">LIVE</span>
+                </div>
+
+                <div class="val" id="kpiInbox">@Model.InboxCount</div>
+                <div class="spark" data-sparkline="inbox"></div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="ebys-kpi">
+                <div class="head">
+                    <div class="icon i2"><i class="bi bi-send"></i></div>
+                    <div class="meta">
+                        <div class="t">Giden Kutusu</div>
+                        <div class="s">Gönderilen</div>
+                    </div>
+                    <span class="badge text-bg-light border">LIVE</span>
+                </div>
+
+                <div class="val" id="kpiOutbox">@Model.OutboxCount</div>
+                <div class="spark" data-sparkline="outbox"></div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="ebys-kpi">
+                <div class="head">
+                    <div class="icon i3"><i class="bi bi-archive"></i></div>
+                    <div class="meta">
+                        <div class="t">Arşiv</div>
+                        <div class="s">Kapanan kayıtlar</div>
+                    </div>
+                    <span class="badge text-bg-light border">LIVE</span>
+                </div>
+
+                <div class="val" id="kpiArchive">@Model.ArchiveCount</div>
+                <div class="spark" data-sparkline="archive"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-1">
+        <div class="col-xl-6">
+            <div class="ebys-section">
+                <div class="ebys-section-head">
+                    <div class="title"><i class="bi bi-clock-history me-2"></i>Son Belgeler</div>
+                    <div class="desc">JS mock liste (UI demo)</div>
+                </div>
+
+                <div class="ebys-list" id="recentDocsList"></div>
+            </div>
+        </div>
+
+        <div class="col-xl-6">
+            <div class="ebys-section">
+                <div class="ebys-section-head">
+                    <div class="title"><i class="bi bi-bell me-2"></i>Bildirim Paneli</div>
+                    <div class="desc">Onay / iade / hatırlatma (mock)</div>
+                </div>
+
+                <div class="ebys-notes" id="notifList"></div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="ebys-section">
+                <div class="ebys-section-head">
+                    <div class="title"><i class="bi bi-pen me-2"></i>Bekleyen İmzalar</div>
+                    <div class="desc">Kısayol mantığı (mock)</div>
+                </div>
+
+                <div class="ebys-list" id="pendingSignList"></div>
+
+                <div class="d-flex gap-2 mt-3">
+                    <a class="btn btn-outline-primary ebys-btn ajax"
+                       data-url="/Document/_Inbox"
+                       data-title="Gelen Kutusu">
+                        <i class="bi bi-inbox me-2"></i>Inbox’a Git
+                    </a>
+
+                    <a class="btn btn-outline-secondary ebys-btn" asp-controller="Document" asp-action="Create">
+                        <i class="bi bi-file-earmark-plus me-2"></i>Yeni Belge
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="ebys-section">
+                <div class="ebys-section-head">
+                    <div class="title"><i class="bi bi-activity me-2"></i>Haftalık Trend</div>
+                    <div class="desc">Mini chart (JS-only)</div>
+                </div>
+
+                <div class="ebys-miniChart" id="weeklyChart" data-minichart="weekly"></div>
+
+                <div class="ebys-legend">
+                    <span><span class="dot d1"></span>Gelen</span>
+                    <span><span class="dot d2"></span>Giden</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('[data-action="refresh"]').forEach(b => {
+            b.addEventListener('click', () => window.EBYS_DASH?.rebuild?.());
+        });
+    </script>
+}

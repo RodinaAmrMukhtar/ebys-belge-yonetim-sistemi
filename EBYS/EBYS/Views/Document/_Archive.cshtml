@@ -1,0 +1,168 @@
+﻿@model List<EBYS.Models.Document>
+@using System
+
+@{
+    ViewData["Title"] = "Arşiv";
+}
+
+<div class="ebys-pagehead">
+    <div>
+        <div class="ebys-h1"><i class="bi bi-archive me-2"></i>Arşiv</div>
+        <div class="ebys-sub">Kapanan kayıtlar • Geri yükleme mümkündür</div>
+    </div>
+    <span class="badge text-bg-light border ebys-badge">
+        <i class="bi bi-files me-1"></i>@(Model?.Count ?? 0) kayıt
+    </span>
+</div>
+
+<div class="ebys-card">
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="ebys-empty">
+            <div class="icon"><i class="bi bi-inbox"></i></div>
+            <div>
+                <div class="fw-bold">Arşiv boş</div>
+                <div class="text-muted small">Henüz arşive alınmış belge bulunmuyor.</div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table ebys-table align-middle">
+                <thead>
+                    <tr>
+                        <th style="width:170px;">Sayı</th>
+                        <th>Başlık</th>
+                        <th style="width:160px;">Durum</th>
+                        <th style="width:160px;" class="text-end">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var d in Model)
+                    {
+                        <tr>
+                            <td class="text-muted">
+                                <span class="ebys-mono">@(string.IsNullOrEmpty(d.Sayi) ? "—" : d.Sayi)</span>
+                            </td>
+
+                            <td>
+                                <div class="fw-semibold">@d.Baslik</div>
+                                <div class="small text-muted">Konu: @(string.IsNullOrWhiteSpace(d.Konu) ? "—" : d.Konu)</div>
+                            </td>
+
+                            <td>
+                                <span class="badge text-bg-light border">
+                                    <i class="bi bi-tag me-1"></i>@(string.IsNullOrWhiteSpace(d.Durum) ? "—" : d.Durum)
+                                </span>
+                            </td>
+
+                            <td class="text-end">
+                                <form asp-action="Restore" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@d.Id" />
+                                    <button class="btn btn-sm btn-outline-success ebys-btn-sm">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i>Geri Yükle
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<style>
+    :root {
+        --glass-bg: rgba(255,255,255,.68);
+        --glass-bd: rgba(255,255,255,.40);
+        --shadow: 0 18px 55px rgba(0,0,0,.10);
+        --ink: #0f172a;
+        --muted: #64748b;
+    }
+
+    .ebys-pagehead {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin: 6px 0 12px 0;
+    }
+
+    .ebys-h1 {
+        font-weight: 900;
+        color: var(--ink);
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .ebys-sub {
+        color: var(--muted);
+        font-size: .85rem;
+        margin-top: 4px;
+    }
+
+    .ebys-card {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-bd);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        padding: 14px;
+    }
+
+    .ebys-table thead th {
+        color: rgba(15,23,42,.75);
+        font-weight: 800;
+        border-bottom: 1px solid rgba(15,23,42,.10);
+        background: rgba(255,255,255,.65);
+    }
+
+    .ebys-table tbody tr {
+        border-bottom: 1px dashed rgba(15,23,42,.10);
+    }
+
+        .ebys-table tbody tr:hover {
+            background: rgba(13,110,253,.04);
+        }
+
+    .ebys-mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    .ebys-btn-sm {
+        border-radius: 12px;
+        font-weight: 800;
+    }
+
+    .ebys-badge {
+        border-radius: 999px;
+        padding: 8px 10px;
+    }
+
+    .ebys-empty {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 14px;
+        border: 1px dashed rgba(15,23,42,.16);
+        border-radius: 16px;
+        background: rgba(255,255,255,.55);
+    }
+
+        .ebys-empty .icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            background: rgba(13,110,253,.10);
+            border: 1px solid rgba(13,110,253,.18);
+            color: #0d6efd;
+            font-size: 1.2rem;
+        }
+</style>

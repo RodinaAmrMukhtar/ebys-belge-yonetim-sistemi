@@ -1,0 +1,156 @@
+﻿@model EBYS.Models.Document
+@using System
+
+@{
+    ViewData["Title"] = "Alıcı / İmzacı";
+    Layout = "_DocumentLayout";
+}
+
+@functions {
+    string DurumText(string? d) => d switch
+    {
+        "Sent" => "İmza Bekliyor",
+        "Approved" => "Onaylandı",
+        "Rejected" => "Reddedildi",
+        "Draft" => "Taslak",
+        "Archived" => "Arşivlendi",
+        _ => string.IsNullOrWhiteSpace(d) ? "—" : d!
+    };
+
+    string DurumBadge(string? d) => d switch
+    {
+        "Sent" => "text-bg-warning",
+        "Approved" => "text-bg-success",
+        "Rejected" => "text-bg-danger",
+        "Draft" => "text-bg-light border text-dark",
+        "Archived" => "text-bg-secondary",
+        _ => "text-bg-light border text-dark"
+    };
+}
+
+<div class="ebys-pagehead">
+    <div>
+        <div class="ebys-h1"><i class="bi bi-people me-2"></i>Alıcı / İmzacı Bilgisi</div>
+        <div class="ebys-sub">Bu sistemde alıcı yok • Sadece imzacıya iletilir</div>
+    </div>
+</div>
+
+<div class="ebys-card">
+    <div class="alert alert-info mb-3">
+        Bu sistemde ayrı bir <strong>Alıcı</strong> tanımı yoktur.
+        Belge yalnızca <strong>İmzacı</strong> olarak seçilen kullanıcıya iletilir.
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-7">
+            <div class="ebys-kv">
+                <div class="k">Belge Sayısı</div>
+                <div class="v">@(!string.IsNullOrWhiteSpace(Model.Sayi) ? Model.Sayi : "—")</div>
+
+                <div class="k">Başlık</div>
+                <div class="v">@Model.Baslik</div>
+
+                <div class="k">İmzacı Kullanıcı ID</div>
+                <div class="v ebys-mono">@(!string.IsNullOrWhiteSpace(Model.SignerUserId) ? Model.SignerUserId : "—")</div>
+
+                <div class="k">Durum</div>
+                <div class="v">
+                    <span class="badge @DurumBadge(Model.Durum)">
+                        <i class="bi bi-dot me-1"></i>@DurumText(Model.Durum)
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="ebys-mini">
+                <div class="fw-bold mb-2"><i class="bi bi-file-earmark-pdf me-2"></i>PDF</div>
+                <a asp-action="PdfInline" asp-route-id="@Model.Id" target="_blank"
+                   class="btn btn-outline-primary ebys-btn-sm w-100">
+                    <i class="bi bi-eye me-1"></i>PDF Görüntüle
+                </a>
+                <div class="small text-muted mt-2">
+                    PDF yeni sekmede açılır.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --glass-bg: rgba(255,255,255,.68);
+        --glass-bd: rgba(255,255,255,.40);
+        --shadow: 0 18px 55px rgba(0,0,0,.10);
+        --ink: #0f172a;
+        --muted: #64748b;
+    }
+
+    .ebys-pagehead {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin: 6px 0 12px;
+    }
+
+    .ebys-h1 {
+        font-weight: 900;
+        color: var(--ink);
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .ebys-sub {
+        color: var(--muted);
+        font-size: .85rem;
+        margin-top: 4px;
+    }
+
+    .ebys-card {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-bd);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        padding: 14px;
+    }
+
+    .ebys-btn-sm {
+        border-radius: 12px;
+        font-weight: 800;
+    }
+
+    .ebys-mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    .ebys-kv {
+        display: grid;
+        grid-template-columns: 170px 1fr;
+        gap: 10px 12px;
+        padding: 12px;
+        border-radius: 16px;
+        background: rgba(255,255,255,.55);
+        border: 1px solid rgba(15,23,42,.08);
+    }
+
+        .ebys-kv .k {
+            color: var(--muted);
+            font-size: .82rem;
+        }
+
+        .ebys-kv .v {
+            color: var(--ink);
+            font-weight: 750;
+        }
+
+    .ebys-mini {
+        padding: 12px;
+        border-radius: 16px;
+        background: rgba(255,255,255,.55);
+        border: 1px solid rgba(15,23,42,.08);
+    }
+</style>

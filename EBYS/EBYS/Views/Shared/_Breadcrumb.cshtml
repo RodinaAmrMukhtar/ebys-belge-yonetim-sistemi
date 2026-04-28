@@ -1,0 +1,11 @@
+﻿@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+}
+
+<nav class="breadcrumb mb-3">
+    <a class="breadcrumb-item" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+    @if (controller != "Dashboard")
+    {
+        <span class="breadcrumb-item active">@controller</span>
+    }
+</nav>

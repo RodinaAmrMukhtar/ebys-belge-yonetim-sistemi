@@ -1,0 +1,453 @@
+﻿@page
+@model LoginModel
+
+@{
+    ViewData["Title"] = "Giriş Yap";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - EBYS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+
+    <style>
+        :root {
+            --glass-bg: rgba(255,255,255,.70);
+            --glass-bd: rgba(255,255,255,.42);
+            --glass-shadow: 0 22px 70px rgba(0,0,0,.18);
+            --ink: #0f172a;
+            --muted: #64748b;
+            --blue: #0d6efd;
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            display: grid;
+            place-items: center;
+            background: radial-gradient(1200px 600px at 10% 0%, rgba(13,110,253,.14), transparent 55%), radial-gradient(900px 520px at 100% 10%, rgba(99,102,241,.12), transparent 55%), url('/images/Login.png') no-repeat center bottom / cover, #f6f7fb;
+        }
+
+        .ebys-auth-wrap {
+            width: min(980px, 92vw);
+            display: grid;
+            grid-template-columns: 1.05fr .95fr;
+            gap: 18px;
+            align-items: stretch;
+        }
+
+        .ebys-auth-hero {
+            border-radius: 18px;
+            padding: 18px;
+            background: rgba(255,255,255,.55);
+            border: 1px solid rgba(15,23,42,.08);
+            box-shadow: 0 18px 55px rgba(0,0,0,.10);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            position: relative;
+            overflow: hidden;
+        }
+
+            .ebys-auth-hero::before {
+                content: "";
+                position: absolute;
+                inset: -40%;
+                background: radial-gradient(circle at 30% 30%, rgba(13,110,253,.20), transparent 45%), radial-gradient(circle at 70% 40%, rgba(99,102,241,.16), transparent 48%);
+                transform: rotate(10deg);
+                opacity: .8;
+            }
+
+            .ebys-auth-hero > * {
+                position: relative;
+            }
+
+        .ebys-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(255,255,255,.70);
+            border: 1px solid rgba(15,23,42,.08);
+            color: var(--ink);
+            font-weight: 700;
+            font-size: .84rem;
+            width: fit-content;
+        }
+
+        .ebys-hero-title {
+            font-weight: 900;
+            color: var(--ink);
+            margin: 10px 0 6px 0;
+            letter-spacing: -.2px;
+        }
+
+        .ebys-hero-sub {
+            color: var(--muted);
+            margin: 0;
+            font-size: .95rem;
+        }
+
+        .ebys-bullets {
+            margin-top: 14px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .ebys-bullet {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            padding: 10px 12px;
+            border-radius: 14px;
+            background: rgba(255,255,255,.62);
+            border: 1px solid rgba(15,23,42,.07);
+        }
+
+            .ebys-bullet i {
+                color: var(--blue);
+                font-size: 1.1rem;
+                margin-top: 1px;
+            }
+
+            .ebys-bullet .t {
+                font-weight: 800;
+                color: var(--ink);
+                line-height: 1.2;
+            }
+
+            .ebys-bullet .d {
+                color: var(--muted);
+                font-size: .88rem;
+                margin-top: 2px;
+            }
+
+        .ebys-auth-card {
+            border-radius: 18px;
+            padding: 16px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-bd);
+            box-shadow: var(--glass-shadow);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .ebys-auth-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 8px 10px;
+            border-radius: 16px;
+            background: rgba(255,255,255,.62);
+            border: 1px solid rgba(15,23,42,.08);
+            margin-bottom: 12px;
+        }
+
+        .ebys-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+            .ebys-brand img {
+                height: 42px;
+                width: auto;
+            }
+
+            .ebys-brand .meta {
+                min-width: 0;
+            }
+
+            .ebys-brand .name {
+                font-weight: 900;
+                color: var(--ink);
+                line-height: 1.05;
+                margin: 0;
+            }
+
+            .ebys-brand .desc {
+                color: var(--muted);
+                font-size: .78rem;
+                margin: 0;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 260px;
+            }
+
+        .ebys-badge {
+            background: rgba(255,255,255,.92);
+            border: 1px solid rgba(15,23,42,.14);
+            color: var(--ink);
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: .80rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .ebys-section-title {
+            font-weight: 900;
+            color: var(--ink);
+            margin: 8px 0 4px 0;
+        }
+
+        .ebys-section-sub {
+            color: var(--muted);
+            font-size: .90rem;
+            margin-bottom: 12px;
+        }
+
+        .ebys-field .field-hint {
+            display: none;
+            margin-top: 6px;
+            font-size: .78rem;
+            color: var(--muted);
+        }
+
+        .ebys-field.has-focus .field-hint {
+            display: block;
+        }
+
+        .form-control, .input-group .btn {
+            border-radius: 12px;
+        }
+
+            .form-control:focus {
+                border-color: rgba(13,110,253,.45);
+                box-shadow: 0 0 0 .2rem rgba(13,110,253,.18);
+            }
+
+        .ebys-btn {
+            border-radius: 12px;
+            padding: 10px 12px;
+            box-shadow: 0 10px 24px rgba(0,0,0,.08);
+            transition: transform .16s ease, box-shadow .16s ease;
+            font-weight: 800;
+        }
+
+            .ebys-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 14px 30px rgba(0,0,0,.10);
+            }
+
+        .btn-primary.ebys-btn {
+            background: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        .ebys-linkchip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(15,23,42,.12);
+            background: rgba(255,255,255,.80);
+            text-decoration: none;
+            color: var(--ink);
+            font-weight: 700;
+            font-size: .84rem;
+        }
+
+            .ebys-linkchip:hover {
+                background: rgba(13,110,253,.06);
+                border-color: rgba(13,110,253,.25);
+                color: var(--ink);
+            }
+
+        .ebys-footrow {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .caps-warn {
+            display: none;
+            margin-top: 8px;
+            font-size: .82rem;
+            color: #b45309;
+            background: rgba(255,193,7,.18);
+            border: 1px solid rgba(255,193,7,.30);
+            border-radius: 12px;
+            padding: 8px 10px;
+        }
+
+        @@media (max-width: 992px) {
+            .ebys-auth-wrap
+
+        {
+            grid-template-columns: 1fr;
+        }
+
+        .ebys-auth-hero {
+            display: none;
+        }
+
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ebys-auth-wrap">
+
+        <!-- LEFT HERO (hidden on small screens) -->
+        <aside class="ebys-auth-hero">
+            <div class="ebys-pill">
+                <i class="bi bi-shield-check"></i>
+                <span>EBYS • Güvenli Oturum</span>
+            </div>
+
+            <h2 class="ebys-hero-title">Elektronik Belge Yönetim Sistemi</h2>
+            <p class="ebys-hero-sub">
+                Belgelerini oluştur, imzaya gönder, arşivle — hepsi tek yerde.
+            </p>
+
+            <div class="ebys-bullets">
+                <div class="ebys-bullet">
+                    <i class="bi bi-lightning-charge"></i>
+                    <div>
+                        <div class="t">Hızlı akış</div>
+                        <div class="d">Taslak → Ön izleme → İmzacı → Gönder</div>
+                    </div>
+                </div>
+
+                <div class="ebys-bullet">
+                    <i class="bi bi-eye"></i>
+                    <div>
+                        <div class="t">Kontrollü yazdırma</div>
+                        <div class="d">A4 ön izleme ile hatasız çıktı</div>
+                    </div>
+                </div>
+
+                <div class="ebys-bullet">
+                    <i class="bi bi-paperclip"></i>
+                    <div>
+                        <div class="t">Ek yönetimi</div>
+                        <div class="d">PDF ön izleme + tek tık sil</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- RIGHT CARD -->
+        <main class="ebys-auth-card">
+
+            <div class="ebys-auth-top">
+                <div class="ebys-brand">
+                    <img src="~/images/BLUE.png" alt="EBYS" />
+                    <div class="meta">
+                        <p class="name mb-0">EBYS</p>
+                        <p class="desc mb-0">Elektronik Belge Yönetim Sistemi</p>
+                    </div>
+                </div>
+
+                <span class="ebys-badge">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    <span>Giriş</span>
+                </span>
+            </div>
+
+            <h5 class="ebys-section-title mb-0">Giriş Yap</h5>
+            <div class="ebys-section-sub">Devam etmek için hesabınızla oturum açın.</div>
+
+            <form method="post" novalidate>
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="mb-3 ebys-field">
+                    <label asp-for="Input.Email" class="form-label fw-semibold">E-posta</label>
+                    <input asp-for="Input.Email" class="form-control" autocomplete="username" placeholder="name@example.com" />
+                    <span asp-validation-for="Input.Email" class="text-danger"></span>
+                    <div class="field-hint"><i class="bi bi-info-circle me-1"></i>Kurumsal e-posta önerilir.</div>
+                </div>
+
+                <div class="mb-2 ebys-field">
+                    <label asp-for="Input.Password" class="form-label fw-semibold">Parola</label>
+                    <div class="input-group">
+                        <input asp-for="Input.Password" class="form-control" autocomplete="current-password" id="passwordInput" />
+                        <button type="button" class="btn btn-outline-secondary" id="togglePassword" aria-label="Parolayı göster/gizle">
+                            <i class="bi bi-eye-slash" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Input.Password" class="text-danger"></span>
+                    <div class="caps-warn" id="capsWarn">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Caps Lock açık olabilir.
+                    </div>
+                    <div class="field-hint"><i class="bi bi-shield-lock me-1"></i>Parolanız sistemde gizli tutulur.</div>
+                </div>
+
+                <div class="ebys-footrow mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" asp-for="Input.RememberMe" id="rememberMe" />
+                        <label class="form-check-label" asp-for="Input.RememberMe">Beni hatırla</label>
+                    </div>
+
+                    <a asp-page="./ForgotPassword" class="ebys-linkchip">
+                        <i class="bi bi-key"></i>
+                        <span>Parolamı unuttum</span>
+                    </a>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 ebys-btn">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Giriş Yap
+                </button>
+
+                <div class="text-center mt-3">
+                    <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl" class="ebys-linkchip">
+                        <i class="bi bi-person-plus"></i>
+                        <span>Hesap oluştur</span>
+                    </a>
+                </div>
+            </form>
+
+            <div class="text-center mt-3 small text-muted">
+                <i class="bi bi-lock me-1"></i>Oturum işlemleri güvenli bağlantı üzerinden yapılır.
+            </div>
+        </main>
+    </div>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // focus hint (same vibe as ebys-field)
+        document.querySelectorAll('.ebys-field input, .ebys-field textarea, .ebys-field select').forEach(el => {
+            el.addEventListener('focus', () => el.closest('.ebys-field')?.classList.add('has-focus'));
+            el.addEventListener('blur', () => el.closest('.ebys-field')?.classList.remove('has-focus'));
+        });
+
+        // password toggle
+        const btn = document.getElementById('togglePassword');
+        const input = document.getElementById('passwordInput');
+        const icon = document.getElementById('eyeIcon');
+
+        btn?.addEventListener('click', () => {
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            icon.classList.toggle('bi-eye');
+            icon.classList.toggle('bi-eye-slash');
+        });
+
+        // caps lock warn
+        const caps = document.getElementById('capsWarn');
+        input?.addEventListener('keyup', (e) => {
+            const on = e.getModifierState && e.getModifierState('CapsLock');
+            caps.style.display = on ? 'block' : 'none';
+        });
+    </script>
+</body>
+</html>

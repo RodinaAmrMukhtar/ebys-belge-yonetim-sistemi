@@ -1,0 +1,14 @@
+﻿@model EBYS.Models.UserProfile
+
+@if (Model != null)
+{
+    <div class="text-center mb-4">
+        <img src="https://via.placeholder.com/80"
+             class="rounded-circle mb-2"
+             alt="Profile" />
+
+        <div class="fw-bold">@Model.FullName</div>
+        <div class="text-muted small">@Model.Title</div>
+        <div class="text-muted small">@Model.Department.Name</div>
+    </div>
+}

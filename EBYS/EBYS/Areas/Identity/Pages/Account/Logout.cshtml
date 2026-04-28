@@ -1,0 +1,150 @@
+﻿@page
+@model LogoutModel
+@{
+    ViewData["Title"] = "Çıkış Yap";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - EBYS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+
+    <style>
+        :root {
+            --glass-bg: rgba(255,255,255,.70);
+            --glass-bd: rgba(255,255,255,.42);
+            --glass-shadow: 0 22px 70px rgba(0,0,0,.18);
+            --ink: #0f172a;
+            --muted: #64748b;
+            --blue: #0d6efd;
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            display: grid;
+            place-items: center;
+            background: radial-gradient(1200px 600px at 10% 0%, rgba(13,110,253,.14), transparent 55%), radial-gradient(900px 520px at 100% 10%, rgba(99,102,241,.12), transparent 55%), url('/images/Login.png') no-repeat center bottom / cover, #f6f7fb;
+        }
+
+        .ebys-card {
+            width: min(520px,92vw);
+            border-radius: 18px;
+            padding: 16px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-bd);
+            box-shadow: var(--glass-shadow);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .ebys-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 8px 10px;
+            border-radius: 16px;
+            background: rgba(255,255,255,.62);
+            border: 1px solid rgba(15,23,42,.08);
+            margin-bottom: 12px;
+        }
+
+        .ebys-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .ebys-brand img {
+                height: 42px;
+            }
+
+            .ebys-brand .name {
+                font-weight: 900;
+                color: var(--ink);
+                margin: 0;
+                line-height: 1.05;
+            }
+
+            .ebys-brand .desc {
+                color: var(--muted);
+                font-size: .78rem;
+                margin: 0;
+            }
+
+        .ebys-badge {
+            background: rgba(255,255,255,.92);
+            border: 1px solid rgba(15,23,42,.14);
+            color: var(--ink);
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: .80rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .ebys-title {
+            font-weight: 900;
+            color: var(--ink);
+            margin: 10px 0 6px 0;
+        }
+
+        .ebys-sub {
+            color: var(--muted);
+            margin: 0 0 12px 0;
+        }
+
+        .ebys-btn {
+            border-radius: 12px;
+            padding: 10px 12px;
+            box-shadow: 0 10px 24px rgba(0,0,0,.08);
+            transition: transform .16s ease, box-shadow .16s ease;
+            font-weight: 800;
+        }
+
+            .ebys-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 14px 30px rgba(0,0,0,.10);
+            }
+    </style>
+</head>
+
+<body>
+    <main class="ebys-card">
+        <div class="ebys-top">
+            <div class="ebys-brand">
+                <img src="~/images/BLUE.png" alt="EBYS" />
+                <div>
+                    <p class="name mb-0">EBYS</p>
+                    <p class="desc mb-0">Elektronik Belge Yönetim Sistemi</p>
+                </div>
+            </div>
+            <span class="ebys-badge"><i class="bi bi-box-arrow-right"></i><span>Çıkış</span></span>
+        </div>
+
+        <h5 class="ebys-title">Çıkış Yapıldı</h5>
+        <p class="ebys-sub">Oturumunuz kapatıldı.</p>
+
+        <div class="d-grid gap-2">
+            <a class="btn btn-primary ebys-btn" href="/">
+                <i class="bi bi-house-door me-2"></i>Ana Sayfa
+            </a>
+            <a class="btn btn-outline-secondary ebys-btn" href="/Identity/Account/Login">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Tekrar Giriş
+            </a>
+        </div>
+    </main>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

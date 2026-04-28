@@ -1,0 +1,151 @@
+﻿@model List<EBYS.Models.DocumentAudit>
+@using System
+
+@{
+    ViewData["Title"] = "Belge İşlem Geçmişi";
+}
+
+<div class="ebys-pagehead">
+    <div>
+        <div class="ebys-h1"><i class="bi bi-clock-history me-2"></i>Belge İşlem Geçmişi</div>
+        <div class="ebys-sub">Kim • Ne yaptı • Ne zaman</div>
+    </div>
+    <span class="badge text-bg-light border ebys-badge">
+        <i class="bi bi-list-check me-1"></i>@(Model?.Count ?? 0) kayıt
+    </span>
+</div>
+
+<div class="ebys-card">
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="ebys-empty">
+            <div class="icon"><i class="bi bi-info-circle"></i></div>
+            <div>
+                <div class="fw-bold">Kayıt bulunamadı</div>
+                <div class="text-muted small">Bu belge için işlem geçmişi yok.</div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="ebys-timeline">
+            @foreach (var a in Model)
+            {
+                <div class="ebys-titem">
+                    <div class="dot"></div>
+                    <div class="content">
+                        <div class="top">
+                            <div class="fw-bold">@a.Action</div>
+                            <div class="small text-muted">
+                                @(a.PerformedAt == default ? "—" : a.PerformedAt.ToString("dd.MM.yyyy HH:mm"))
+                            </div>
+                        </div>
+                        <div class="small text-muted">
+                            <i class="bi bi-person me-1"></i>@(string.IsNullOrWhiteSpace(a.PerformedByName) ? "—" : a.PerformedByName)
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    :root {
+        --glass-bg: rgba(255,255,255,.68);
+        --glass-bd: rgba(255,255,255,.40);
+        --shadow: 0 18px 55px rgba(0,0,0,.10);
+        --ink: #0f172a;
+        --muted: #64748b;
+    }
+
+    .ebys-pagehead {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin: 6px 0 12px;
+    }
+
+    .ebys-h1 {
+        font-weight: 900;
+        color: var(--ink);
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .ebys-sub {
+        color: var(--muted);
+        font-size: .85rem;
+        margin-top: 4px;
+    }
+
+    .ebys-card {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-bd);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        padding: 14px;
+    }
+
+    .ebys-badge {
+        border-radius: 999px;
+        padding: 8px 10px;
+    }
+
+    .ebys-timeline {
+        display: grid;
+        gap: 10px;
+    }
+
+    .ebys-titem {
+        display: grid;
+        grid-template-columns: 18px 1fr;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 16px;
+        background: rgba(255,255,255,.55);
+        border: 1px solid rgba(15,23,42,.08);
+    }
+
+        .ebys-titem .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 999px;
+            margin-top: 6px;
+            background: rgba(13,110,253,.65);
+            box-shadow: 0 0 0 6px rgba(13,110,253,.10);
+        }
+
+        .ebys-titem .top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+    .ebys-empty {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 14px;
+        border: 1px dashed rgba(15,23,42,.16);
+        border-radius: 16px;
+        background: rgba(255,255,255,.55);
+    }
+
+        .ebys-empty .icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            background: rgba(13,110,253,.10);
+            border: 1px solid rgba(13,110,253,.18);
+            color: #0d6efd;
+            font-size: 1.2rem;
+        }
+</style>

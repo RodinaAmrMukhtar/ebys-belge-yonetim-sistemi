@@ -1,0 +1,159 @@
+﻿@model List<EBYS.Models.Document>
+@using System
+
+@{
+    ViewData["Title"] = "Gelen Kutusu";
+}
+
+<div class="ebys-pagehead">
+    <div>
+        <div class="ebys-h1"><i class="bi bi-inbox me-2"></i>Gelen Belgeler</div>
+        <div class="ebys-sub">İmzacı olarak üzerinizde bekleyen belgeler</div>
+    </div>
+    <span class="badge text-bg-light border ebys-badge">
+        <i class="bi bi-hourglass-split me-1"></i>@(Model?.Count ?? 0) belge
+    </span>
+</div>
+
+<div class="ebys-card">
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="ebys-empty">
+            <div class="icon"><i class="bi bi-check2-circle"></i></div>
+            <div>
+                <div class="fw-bold">Bekleyen belge yok</div>
+                <div class="text-muted small">Şu an imza bekleyen bir belge bulunmuyor.</div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table ebys-table align-middle">
+                <thead>
+                    <tr>
+                        <th style="width:170px;">Sayı</th>
+                        <th>Başlık</th>
+                        <th style="width:140px;">Tarih</th>
+                        <th style="width:170px;" class="text-end">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var d in Model)
+                    {
+                        <tr>
+                            <td class="text-muted"><span class="ebys-mono">@(string.IsNullOrEmpty(d.Sayi) ? "—" : d.Sayi)</span></td>
+                            <td>
+                                <div class="fw-semibold">@d.Baslik</div>
+                                <div class="small text-muted">Konu: @(string.IsNullOrWhiteSpace(d.Konu) ? "—" : d.Konu)</div>
+                            </td>
+                            <td class="text-muted">
+                                @(d.CreatedAt == default ? "—" : d.CreatedAt.ToString("dd.MM.yyyy"))
+                            </td>
+                            <td class="text-end">
+                                <a asp-action="Sign" asp-route-id="@d.Id"
+                                   class="btn btn-sm btn-primary ebys-btn-sm">
+                                    <i class="bi bi-pen me-1"></i>Aç / İmzala
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<style>
+    /* same vibe helper styles (safe to repeat) */
+    :root {
+        --glass-bg: rgba(255,255,255,.68);
+        --glass-bd: rgba(255,255,255,.40);
+        --shadow: 0 18px 55px rgba(0,0,0,.10);
+        --ink: #0f172a;
+        --muted: #64748b;
+    }
+
+    .ebys-pagehead {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin: 6px 0 12px;
+    }
+
+    .ebys-h1 {
+        font-weight: 900;
+        color: var(--ink);
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .ebys-sub {
+        color: var(--muted);
+        font-size: .85rem;
+        margin-top: 4px;
+    }
+
+    .ebys-card {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-bd);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        padding: 14px;
+    }
+
+    .ebys-table thead th {
+        color: rgba(15,23,42,.75);
+        font-weight: 800;
+        border-bottom: 1px solid rgba(15,23,42,.10);
+        background: rgba(255,255,255,.65);
+    }
+
+    .ebys-table tbody tr {
+        border-bottom: 1px dashed rgba(15,23,42,.10);
+    }
+
+        .ebys-table tbody tr:hover {
+            background: rgba(13,110,253,.04);
+        }
+
+    .ebys-mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    .ebys-btn-sm {
+        border-radius: 12px;
+        font-weight: 800;
+    }
+
+    .ebys-badge {
+        border-radius: 999px;
+        padding: 8px 10px;
+    }
+
+    .ebys-empty {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 14px;
+        border: 1px dashed rgba(15,23,42,.16);
+        border-radius: 16px;
+        background: rgba(255,255,255,.55);
+    }
+
+        .ebys-empty .icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            background: rgba(25,135,84,.10);
+            border: 1px solid rgba(25,135,84,.18);
+            color: #198754;
+            font-size: 1.2rem;
+        }
+</style>

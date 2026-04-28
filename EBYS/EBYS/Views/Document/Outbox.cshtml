@@ -1,0 +1,258 @@
+﻿@model List<EBYS.Models.Document>
+@using System
+
+@{
+    ViewData["Title"] = "Giden Kutusu";
+}
+
+@functions {
+    string DurumText(string? d) => d switch
+    {
+        "Draft" => "Taslak",
+        "Sent" => "İmza Bekliyor",
+        "Approved" => "Onaylandı",
+        "Rejected" => "Reddedildi",
+        "Archived" => "Arşivlendi",
+        _ => string.IsNullOrWhiteSpace(d) ? "—" : d!
+    };
+
+    // ✅ Colored (NOT white) badge classes
+    string DurumClass(string? d) => d switch
+    {
+        "Draft" => "st-pill st-draft",
+        "Sent" => "st-pill st-sent",
+        "Approved" => "st-pill st-approved",
+        "Rejected" => "st-pill st-rejected",
+        "Archived" => "st-pill st-archived",
+        _ => "st-pill st-draft"
+    };
+
+    string DurumIcon(string? d) => d switch
+    {
+        "Draft" => "bi-pencil-square",
+        "Sent" => "bi-hourglass-split",
+        "Approved" => "bi-check2-circle",
+        "Rejected" => "bi-x-circle",
+        "Archived" => "bi-archive",
+        _ => "bi-dot"
+    };
+}
+
+<div class="ebys-pagehead">
+    <div>
+        <div class="ebys-h1"><i class="bi bi-send me-2"></i>Giden Belgeler</div>
+        <div class="ebys-sub">Gönderdiğiniz belgeler • PDF ve arşiv işlemleri</div>
+    </div>
+
+    <span class="badge text-bg-light border ebys-badge">
+        <i class="bi bi-envelope-paper me-1"></i>@(Model?.Count ?? 0) belge
+    </span>
+</div>
+
+<div class="ebys-card">
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="ebys-empty">
+            <div class="icon"><i class="bi bi-send-check"></i></div>
+            <div>
+                <div class="fw-bold">Giden belge yok</div>
+                <div class="text-muted small">Henüz gönderim yapılmamış.</div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table ebys-table align-middle">
+                <thead>
+                    <tr>
+                        <th style="width:170px;">Sayı</th>
+                        <th>Başlık</th>
+                        <th style="width:180px;">Durum</th>
+                        <th style="width:270px;" class="text-end">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var d in Model)
+                    {
+                        <tr>
+                            <td class="text-muted">
+                                <span class="ebys-mono">@(string.IsNullOrWhiteSpace(d.Sayi) ? "—" : d.Sayi)</span>
+                            </td>
+
+                            <td>
+                                <div class="fw-semibold">@d.Baslik</div>
+                                <div class="small text-muted">Konu: @(string.IsNullOrWhiteSpace(d.Konu) ? "—" : d.Konu)</div>
+                                <div class="small text-muted">Tarih: @d.CreatedAt.ToString("dd.MM.yyyy HH:mm")</div>
+                            </td>
+
+                            <td>
+                                <span class="@DurumClass(d.Durum)">
+                                    <i class="bi @DurumIcon(d.Durum) me-2"></i>
+                                    @DurumText(d.Durum)
+                                </span>
+                            </td>
+
+                            <td class="text-end">
+                                <div class="d-inline-flex gap-2">
+                                    <!-- ✅ Uses your existing Pdf(int id) action -->
+                                    <a asp-action="Pdf" asp-route-id="@d.Id"
+                                       class="btn btn-sm btn-outline-primary ebys-btn-sm"
+                                       target="_blank">
+                                        <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+                                    </a>
+
+                                    <form asp-action="SoftDelete" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@d.Id" />
+                                        <button class="btn btn-sm btn-outline-danger ebys-btn-sm">
+                                            <i class="bi bi-archive me-1"></i>Arşivle
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<style>
+    :root {
+        --glass-bg: rgba(255,255,255,.68);
+        --glass-bd: rgba(255,255,255,.40);
+        --shadow: 0 18px 55px rgba(0,0,0,.10);
+        --ink: #0f172a;
+        --muted: #64748b;
+    }
+
+    .ebys-pagehead {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin: 6px 0 12px;
+    }
+
+    .ebys-h1 {
+        font-weight: 900;
+        color: var(--ink);
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .ebys-sub {
+        color: var(--muted);
+        font-size: .85rem;
+        margin-top: 4px;
+    }
+
+    .ebys-card {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-bd);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        padding: 14px;
+    }
+
+    .ebys-table thead th {
+        color: rgba(15,23,42,.75);
+        font-weight: 900;
+        border-bottom: 1px solid rgba(15,23,42,.10);
+        background: rgba(255,255,255,.65);
+        white-space: nowrap;
+    }
+
+    .ebys-table tbody tr {
+        border-bottom: 1px dashed rgba(15,23,42,.10);
+    }
+
+        .ebys-table tbody tr:hover {
+            background: rgba(13,110,253,.04);
+        }
+
+    .ebys-mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+        font-weight: 700;
+    }
+
+    .ebys-btn-sm {
+        border-radius: 12px;
+        font-weight: 900;
+    }
+
+    .ebys-badge {
+        border-radius: 999px;
+        padding: 8px 10px;
+    }
+
+    .ebys-empty {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 14px;
+        border: 1px dashed rgba(15,23,42,.16);
+        border-radius: 16px;
+        background: rgba(255,255,255,.55);
+    }
+
+        .ebys-empty .icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            background: rgba(13,110,253,.10);
+            border: 1px solid rgba(13,110,253,.18);
+            color: #0d6efd;
+            font-size: 1.2rem;
+        }
+
+    /* ✅ Status pill (NOT white) */
+    .st-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 7px 12px;
+        border-radius: 999px;
+        font-weight: 900;
+        font-size: .86rem;
+        border: 1px solid rgba(0,0,0,.10);
+        box-shadow: 0 14px 30px rgba(0,0,0,.06);
+        white-space: nowrap;
+    }
+
+    .st-draft {
+        background: rgba(148,163,184,.22);
+        border-color: rgba(148,163,184,.35);
+        color: #334155;
+    }
+
+    .st-sent {
+        background: rgba(255,193,7,.22);
+        border-color: rgba(255,193,7,.35);
+        color: #664d03;
+    }
+
+    .st-approved {
+        background: rgba(25,135,84,.18);
+        border-color: rgba(25,135,84,.28);
+        color: #0f5132;
+    }
+
+    .st-rejected {
+        background: rgba(220,53,69,.16);
+        border-color: rgba(220,53,69,.26);
+        color: #842029;
+    }
+
+    .st-archived {
+        background: rgba(108,117,125,.18);
+        border-color: rgba(108,117,125,.28);
+        color: #343a40;
+    }
+</style>

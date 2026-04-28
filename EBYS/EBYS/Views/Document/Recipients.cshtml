@@ -1,0 +1,42 @@
+﻿@model EBYS.Models.Document
+
+@{
+    ViewData["Title"] = "Alıcı / İmzacı";
+    Layout = "_DocumentLayout";
+}
+
+<h4>Alıcı / İmzacı Bilgisi</h4>
+
+<div class="alert alert-info">
+    Bu sistemde ayrı bir <strong>Alıcı</strong> tanımı yoktur.
+    <br />
+    Belge yalnızca <strong>İmzacı</strong> olarak seçilen kullanıcıya iletilir.
+</div>
+
+<table class="table table-sm table-bordered">
+    <tr>
+        <th style="width:200px;">İmzacı Kullanıcı ID</th>
+        <td>@Model.SignerUserId</td>
+    </tr>
+    <tr>
+        <th>Belge Durumu</th>
+        <td>
+            @if (Model.Durum == "Sent")
+            {
+                <span class="badge bg-secondary">İmza Bekliyor</span>
+            }
+            else if (Model.Durum == "Approved")
+            {
+                <span class="badge bg-success">Onaylandı</span>
+            }
+            else if (Model.Durum == "Rejected")
+            {
+                <span class="badge bg-danger">Reddedildi</span>
+            }
+            else
+            {
+                <span class="badge bg-dark">@Model.Durum</span>
+            }
+        </td>
+    </tr>
+</table>

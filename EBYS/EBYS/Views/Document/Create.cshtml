@@ -1,0 +1,2152 @@
+﻿@model EBYS.Models.Document
+@using System.Text.Json
+
+@{
+    ViewData["HideNavbar"] = true;
+    ViewData["Title"] = "Yeni Belge";
+
+    var currentUserName = (string?)ViewBag.CurrentUserName ?? User?.Identity?.Name ?? "";
+    var currentUserBirim = (string?)ViewBag.CurrentUserBirim ?? "Birim";
+
+    // ViewBag.Users -> controller'da dolduruluyor
+    var users = ViewBag.Users as IEnumerable<dynamic>;
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+<!-- ✅ FIX: default route is always /Document/Create -->
+<form asp-controller="Document"
+      asp-action="Create"
+      method="post"
+      id="docForm"
+      enctype="multipart/form-data"
+      novalidate>
+
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="EditorContent" id="EditorHidden" />
+
+    <!-- ================= SMALL STICKY HEADER ================= -->
+    <header class="ebys-topbar-wrap">
+        <div class="ebys-topbar">
+            <div class="ebys-topbar-left">
+                <div class="ebys-title">
+                    <div class="ebys-title-main">
+                        <i class="bi bi-file-earmark-text me-2"></i>
+                        <span>Elektronik Belge Oluştur</span>
+                    </div>
+                    <div class="ebys-title-sub">Taslak oluştur, düzenle ve gönder</div>
+                </div>
+
+                <div class="ebys-breadcrumb" aria-label="Breadcrumb">
+                    <span class="crumb"><i class="bi bi-house-door me-1"></i>EBYS</span>
+                    <i class="bi bi-chevron-right sep"></i>
+                    <span class="crumb" id="crumbStep">Üst Veri</span>
+                    <i class="bi bi-chevron-right sep d-none d-md-inline"></i>
+                    <span class="crumb muted d-none d-md-inline" id="crumbHint">Meta bilgiler</span>
+                </div>
+            </div>
+
+            <div class="ebys-topbar-right">
+                <div class="ebys-userpill" title="@currentUserBirim">
+                    <div class="avatar"><i class="bi bi-person-fill"></i></div>
+                    <div class="meta">
+                        <div class="name">@currentUserName</div>
+                        <div class="dept">@currentUserBirim</div>
+                    </div>
+                </div>
+
+                <div class="ebys-actions">
+                    <!-- ✅ Taslak -->
+                    <button type="submit"
+                            formaction="@Url.Action("SaveDraft", "Document")"
+                            class="btn btn-outline-secondary ebys-btn"
+                            id="btnDraft"
+                            formnovalidate>
+                        <i class="bi bi-save2 me-2"></i>Taslak
+                        <span class="ms-2 small text-muted d-none d-lg-inline">(Ctrl+S)</span>
+                    </button>
+
+                    <!-- ✅ Gönder -->
+                    <button type="submit"
+                            formaction="@Url.Action("Create", "Document")"
+                            class="btn btn-primary ebys-btn"
+                            id="btnSend">
+                        <i class="bi bi-send me-2"></i>Gönder
+                        <span class="ms-2 small text-muted d-none d-lg-inline">(Ctrl+Enter)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- global tiny status line -->
+        <div class="ebys-topnote px-1">
+            <div class="ebys-savehint" id="draftStatus">—</div>
+            <button type="button" class="ebys-hotkeybtn" id="btnHotkeys" title="Kısayollar (?)">
+                <i class="bi bi-question-circle"></i>
+                <span class="d-none d-md-inline">Kısayollar</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ================= VALIDATION ================= -->
+    <div class="px-3 pt-3">
+        <div asp-validation-summary="All" class="text-danger"></div>
+    </div>
+
+    <!-- ================= SHELL ================= -->
+    <div class="row g-0 ebys-shell mt-3">
+        <!-- ================= LEFT NAV ================= -->
+        <div class="col-md-3 ebys-left border-end">
+            <div class="ebys-left-inner">
+                <div class="small text-muted mb-2">Bölümler</div>
+
+                <div class="ebys-tablist" id="ebysTabList">
+                    <button type="button" class="ebys-tab active" data-tab="ustveri" data-step="1">
+                        <i class="bi bi-info-circle"></i>
+                        <div>
+                            <div class="label">Üst Veri</div>
+                            <div class="hint">Meta bilgiler</div>
+                        </div>
+                        <span class="ebys-stepchip">1</span>
+                    </button>
+
+                    <button type="button" class="ebys-tab" data-tab="editor" data-step="2">
+                        <i class="bi bi-file-text"></i>
+                        <div>
+                            <div class="label">Editör</div>
+                            <div class="hint">Belge içeriği</div>
+                        </div>
+                        <span class="ebys-stepchip">2</span>
+                    </button>
+
+                    <button type="button" class="ebys-tab" data-tab="imzanotu" data-step="3">
+                        <i class="bi bi-chat-left-text"></i>
+                        <div>
+                            <div class="label">İmza Notu</div>
+                            <div class="hint">Kısa not</div>
+                        </div>
+                        <span class="ebys-stepchip">3</span>
+                    </button>
+
+                    <button type="button" class="ebys-tab" data-tab="onizleme" data-step="4">
+                        <i class="bi bi-eye"></i>
+                        <div>
+                            <div class="label">Ön İzleme</div>
+                            <div class="hint">Yazdırma</div>
+                        </div>
+                        <span class="ebys-stepchip">4</span>
+                    </button>
+
+                    <button type="button" class="ebys-tab" data-tab="imzaci" data-step="5">
+                        <i class="bi bi-pen"></i>
+                        <div>
+                            <div class="label">İmzacı</div>
+                            <div class="hint">Gönderim</div>
+                        </div>
+                        <span class="ebys-stepchip">5</span>
+                    </button>
+
+                    <button type="button" class="ebys-tab" data-tab="ekler" data-step="6">
+                        <i class="bi bi-paperclip"></i>
+                        <div>
+                            <div class="label">Ekler</div>
+                            <div class="hint">Dosyalar</div>
+                        </div>
+                        <span class="ebys-stepchip">6</span>
+                    </button>
+                </div>
+
+                <div class="ebys-minihelp mt-3">
+                    <div class="small text-muted mb-1">İpucu</div>
+                    <div class="small text-muted"><i class="bi bi-lightning-charge me-1"></i>“?” tuşu kısayolları açar.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= RIGHT ================= -->
+        <div class="col-md-9 ebys-right">
+            <div class="ebys-right-inner">
+
+                <!-- ================= ÜST VERİ ================= -->
+                <div id="tab-ustveri" class="ebys-panel active">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h6 class="section-title mb-1"><i class="bi bi-info-circle me-2"></i>Üst Veri</h6>
+                            <div class="small text-muted">Zorunlu: <b>Konu</b> + <b>Başlık</b></div>
+                        </div>
+                        <div class="small text-muted text-end">
+                            <div class="badge text-bg-light border"><i class="bi bi-shield-check me-1"></i>Yönlendirmeli Form</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-lg-8">
+                            <div class="ebys-section">
+                                <div class="ebys-section-head">
+                                    <div class="title"><i class="bi bi-card-text me-2"></i>Belge Kimliği</div>
+                                    <div class="desc">Belgenin resmi tanımı</div>
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6 ebys-field">
+                                        <label class="form-label">Belge Türü</label>
+                                        <select asp-for="BelgeTuru" class="form-select" id="BelgeTuru">
+                                            <option>Dilekçe</option>
+                                            <option>Emeklilik Belgesi</option>
+                                            <option>Öğretim Planı Belgesi</option>
+                                        </select>
+                                        <div class="field-hint">Belge türü şablon ve arşiv sınıflandırması için kullanılır.</div>
+                                    </div>
+
+                                    <div class="col-md-6 ebys-field">
+                                        <label class="form-label">Belge Tarihi</label>
+                                        <input asp-for="BelgeTarihi"
+                                               type="datetime-local"
+                                               class="form-control"
+                                               id="tarihBox"
+                                               value="@(Model?.BelgeTarihi.HasValue == true ? Model.BelgeTarihi.Value.ToString("yyyy-MM-ddTHH:mm") : "")" />
+
+                                        <div class="form-check mt-2">
+                                            <input asp-for="BilaTarih" class="form-check-input" id="bilaCheck" />
+                                            <label class="form-check-label" for="bilaCheck">Bila Tarih</label>
+                                        </div>
+                                        <div class="field-hint">Bila Tarih seçilirse tarih alanı devre dışı kalır.</div>
+                                    </div>
+
+                                    <div class="col-12 ebys-field">
+                                        <label class="form-label">Konu <span class="text-danger">*</span></label>
+                                        <input asp-for="Konu" class="form-control" id="konuInput" />
+                                        <div class="invalid-feedback">Konu zorunludur.</div>
+                                        <div class="field-hint">EBYS aramalarında anahtar bilgi olarak kullanılır (net ve kısa yaz).</div>
+                                    </div>
+
+                                    <div class="col-12 ebys-field">
+                                        <label class="form-label">Başlık <span class="text-danger">*</span></label>
+                                        <input asp-for="Baslik" class="form-control" id="baslikInput" />
+                                        <div class="invalid-feedback">Başlık zorunludur.</div>
+                                        <div class="field-hint">Resmi yazışmalarda görünen ad (tek cümle, kısa).</div>
+                                    </div>
+
+                                    <div class="col-12 ebys-field">
+                                        <label class="form-label">Açıklama</label>
+                                        <textarea asp-for="Aciklama" class="form-control" id="aciklamaInput" rows="3"></textarea>
+                                        <div class="field-hint">Kısa ek bilgi (zorunlu değil). Boş kalırsa “—” kaydedilir.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ebys-section mt-3">
+                                <div class="ebys-section-head">
+                                    <div class="title"><i class="bi bi-lock me-2"></i>Tarih & Gizlilik</div>
+                                    <div class="desc">Resmi tarih ve erişim durumu</div>
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6 ebys-field">
+                                        <label class="form-label">Gizlilik Derecesi</label>
+                                        <select asp-for="GizlilikDerecesi" class="form-select" id="gizlilikCombo">
+                                            <option value="">Seçiniz</option>
+                                            <option>Hizmete Özel</option>
+                                            <option>Gizli</option>
+                                            <option>Çok Gizli</option>
+                                        </select>
+                                        <div class="form-text" id="gizlilikHint"></div>
+                                        <div class="field-hint">Bilgi edinme açıksa gizlilik otomatik kapanır.</div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="ebys-cardbox">
+                                            <div class="form-check ebys-field">
+                                                <input asp-for="BilgiEdinme" class="form-check-input" id="bilgiEdinmeCheck" />
+                                                <label class="form-check-label" for="bilgiEdinmeCheck">Bilgi Edinme</label>
+                                                <div class="field-hint">Açıksa gizlilik devre dışı kalır.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ebys-section mt-3">
+                                <div class="ebys-section-head">
+                                    <div class="title"><i class="bi bi-building me-2"></i>Üretici Bilgileri</div>
+                                    <div class="desc">Sistem tarafından doldurulur</div>
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6 ebys-field">
+                                        <label class="form-label">Üretici Belgesi</label>
+                                        <input asp-for="UreticiBelgesi" class="form-control" id="ureticiInput" readonly />
+                                        <div class="field-hint">Oturum açan kullanıcıya göre otomatik doldurulur.</div>
+                                    </div>
+                                    <div class="col-md-6 ebys-field">
+                                        <label class="form-label">Üretim Yeri</label>
+                                        <input asp-for="UretimYeri" class="form-control" id="uretimInput" readonly />
+                                        <div class="field-hint">Birim bilgisi otomatik doldurulur.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ebys-section mt-3">
+                                <div class="ebys-section-head">
+                                    <div class="title"><i class="bi bi-journal-check me-2"></i>Hukuki İşaretler</div>
+                                    <div class="desc">Belgenin mevzuat / içerik işaretleri</div>
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-md-12">
+                                        <div class="ebys-cardbox">
+                                            <div class="row g-2">
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+                                                        <input asp-for="TelifYasasi" class="form-check-input" id="TelifYasasi" />
+                                                        <label class="form-check-label" for="TelifYasasi">Telif Yasası</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input asp-for="KisiselBilgi" class="form-check-input" id="KisiselBilgi" />
+                                                        <label class="form-check-label" for="KisiselBilgi">Kişisel Bilgi</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+                                                        <input asp-for="ZorunluHal" class="form-check-input" id="ZorunluHal" />
+                                                        <label class="form-check-label" for="ZorunluHal">Zorunlu Hal</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input asp-for="OlaganustuDurum" class="form-check-input" id="OlaganustuDurum" />
+                                                        <label class="form-check-label" for="OlaganustuDurum">Olağanüstü Durum</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="small text-muted mt-2"><i class="bi bi-info-circle me-1"></i>Bu işaretler arşiv / erişim kurallarında kullanılabilir.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2 pt-3">
+                                <button type="button" class="btn btn-outline-primary" id="btnGoEditor">
+                                    <i class="bi bi-arrow-right-circle me-2"></i>Editöre Geç
+                                </button>
+
+                                <button type="button" class="btn btn-outline-secondary" id="btnSaveLocal">
+                                    <i class="bi bi-cloud-arrow-down me-2"></i>Yerel Kaydet
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Right: live summary -->
+                        <div class="col-lg-4">
+                            <div class="ebys-summary">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="fw-semibold"><i class="bi bi-pin-angle me-2"></i>Belge Özeti</div>
+                                    <span class="badge text-bg-light border" id="summaryScore">—</span>
+                                </div>
+
+                                <div class="ebys-srow">
+                                    <div class="k">Konu</div>
+                                    <div class="v" id="sKonu">—</div>
+                                </div>
+                                <div class="ebys-srow">
+                                    <div class="k">Başlık</div>
+                                    <div class="v" id="sBaslik">—</div>
+                                </div>
+                                <div class="ebys-srow">
+                                    <div class="k">Tarih</div>
+                                    <div class="v" id="sTarih">—</div>
+                                </div>
+                                <div class="ebys-srow">
+                                    <div class="k">Gizlilik</div>
+                                    <div class="v" id="sGizlilik">—</div>
+                                </div>
+                                <div class="ebys-srow">
+                                    <div class="k">Üretici</div>
+                                    <div class="v" id="sUretici">—</div>
+                                </div>
+
+                                <hr class="my-3" />
+
+                                <div class="small text-muted">
+                                    <i class="bi bi-check2-circle me-1"></i>
+                                    Eksik alanlar ön izleme ve gönderimde vurgulanır.
+                                </div>
+                            </div>
+
+                            <div class="ebys-tip mt-3">
+                                <div class="fw-semibold mb-1"><i class="bi bi-stars me-2"></i>Kalite İpucu</div>
+                                <div class="small text-muted">
+                                    Konu ve başlığı <b>tek cümle</b> ve <b>net</b> yazarsan arşivde daha kolay bulunur.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= EDITOR ================= -->
+                <div id="tab-editor" class="ebys-panel">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h6 class="section-title mb-1"><i class="bi bi-file-text me-2"></i>Editör</h6>
+                            <div class="small text-muted">Şablon seçebilir, hızlı düzenleme yapabilirsin.</div>
+                        </div>
+
+                        <div class="btn-group ebys-modegroup" role="group" aria-label="Yazım Modu">
+                            <button type="button" class="btn btn-outline-secondary btn-sm ebys-modebtn is-active" data-mode="free">Serbest</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm ebys-modebtn" data-mode="official">Resmi Format</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm ebys-modebtn" data-mode="petition">Dilekçe</button>
+                        </div>
+                    </div>
+
+                    <div class="ebys-toolrow mb-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btnInsertPara">
+                            <i class="bi bi-plus-circle me-2"></i>Paragraf
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btnCleanLines">
+                            <i class="bi bi-eraser me-2"></i>Boş satır temizle
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btnOfficialAlign">
+                            <i class="bi bi-text-paragraph me-2"></i>Resmi hizalama
+                        </button>
+
+                        <span class="ms-auto small text-muted d-none d-md-inline">
+                            <i class="bi bi-info-circle me-1"></i>İpucu: Ctrl+Enter ile gönder.
+                        </span>
+                    </div>
+
+                    <div class="ebys-editor-wrap" id="editorWrap">
+                        <textarea id="editor"></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <div>
+                            <div class="small text-muted" id="wordCount">0 karakter</div>
+                            <div class="small" id="editorRule">—</div>
+                        </div>
+
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="btnGoPreview">
+                            <i class="bi bi-eye me-2"></i>Ön İzleme
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ================= IMZA NOTU ================= -->
+                <div id="tab-imzanotu" class="ebys-panel">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h6 class="section-title mb-1"><i class="bi bi-chat-left-text me-2"></i>İmza Notu</h6>
+                            <div class="small text-muted"><i class="bi bi-eye me-1"></i>Bu not <b>sadece imzacı</b> ekranında görünür.</div>
+                        </div>
+                        <span class="badge text-bg-light border"><i class="bi bi-lock me-1"></i>Gizli Not</span>
+                    </div>
+
+                    <div class="ebys-chips mb-2">
+                        <button type="button" class="ebys-chip" data-note="Bilgilerinize arz ederim.">Bilgilerinize arz ederim</button>
+                        <button type="button" class="ebys-chip" data-note="Gereğini arz ederim.">Gereğini arz ederim</button>
+                        <button type="button" class="ebys-chip" data-note="Onayınıza sunarım.">Onayınıza sunarım</button>
+                        <button type="button" class="ebys-chip" data-note="İvedilikle işlem yapılması rica olunur.">İvedilikle rica olunur</button>
+                    </div>
+
+                    <textarea class="form-control" id="imzaNotu" rows="4" placeholder="İmzacıya iletilecek kısa not..."></textarea>
+                    <div class="small text-muted mt-2">
+                        <i class="bi bi-info-circle me-1"></i>Not kısa ve tek paragraf olursa imzacı ekranında daha okunaklı olur.
+                    </div>
+                </div>
+
+                <!-- ================= PREVIEW ================= -->
+                <div id="tab-onizleme" class="ebys-panel">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h6 class="section-title mb-1"><i class="bi bi-eye me-2"></i>Ön İzleme</h6>
+                            <div class="small text-muted">A4 görünümünde yazdırma öncesi kontrol.</div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btnRefreshPreview">
+                                <i class="bi bi-arrow-clockwise me-2"></i>Yenile
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btnPrintA4">
+                                <i class="bi bi-printer me-2"></i>Yazdır
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="ebys-a4wrap">
+                        <div class="ebys-a4">
+                            <div class="ebys-a4-header">
+                                <div class="topline">T.C. Kurum / Üniversite</div>
+                                <div class="subline" id="pUnit">@currentUserBirim</div>
+                                <div class="meta">
+                                    <div class="mitem">
+                                        <div class="k">Konu</div>
+                                        <div class="v" id="pKonu">—</div>
+                                    </div>
+                                    <div class="mitem text-end">
+                                        <div class="k">Başlık</div>
+                                        <div class="v" id="pBaslik">—</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ebys-a4-body">
+                                <div id="pContent"></div>
+                                <div class="mt-4 small text-muted" id="pImzaNotu"></div>
+                            </div>
+
+                            <div class="ebys-a4-footer">
+                                <div>Elektronik Belge Sistemi</div>
+                                <div id="pFooterDate">—</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= IMZACI ================= -->
+                <div id="tab-imzaci" class="ebys-panel">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h6 class="section-title mb-1"><i class="bi bi-pen me-2"></i>İmzacı</h6>
+                            <div class="small text-muted">Gönderim için imzacı seçimi zorunlu.</div>
+                        </div>
+                        <span class="badge text-bg-light border"><i class="bi bi-diagram-3 me-1"></i>İş Akışı</span>
+                    </div>
+
+                    <div class="ebys-flow mb-3">
+                        <div class="node is-active"><i class="bi bi-pencil-square"></i><span> Siz</span></div>
+                        <div class="sep"><i class="bi bi-arrow-right"></i></div>
+                        <div class="node"><i class="bi bi-pen"></i><span> İmzacı</span></div>
+                        <div class="sep"><i class="bi bi-arrow-right"></i></div>
+                        <div class="node"><i class="bi bi-archive"></i><span> Arşiv</span></div>
+                    </div>
+
+                    <div class="ebys-cardbox">
+                        <label class="form-label">İmzacı Seç</label>
+
+                        <!-- ✅ FIX: bind directly to Model.SignerUserId -->
+                        <select asp-for="SignerUserId" class="form-select" id="signerSelect">
+                            <option value="">İmzacı Seç</option>
+                            @if (users != null)
+                            {
+                                foreach (var u in users)
+                                {
+                                    <option value="@u.IdentityUserId"
+                                            selected="@(Model?.SignerUserId == u.IdentityUserId)">
+                                        @u.FullName
+                                    </option>
+                                }
+                            }
+                        </select>
+
+                        <div class="alert alert-warning mt-3 d-none" id="signerWarn">
+                            <i class="bi bi-exclamation-triangle me-2"></i>İmzacı seçmeden gönderemezsiniz.
+                        </div>
+
+                        <div class="ebys-signer-card d-none mt-3" id="signerCard">
+                            <div class="icon"><i class="bi bi-person-badge"></i></div>
+                            <div class="info">
+                                <div class="name" id="signerName">—</div>
+                                <div class="meta small text-muted">
+                                    <span><i class="bi bi-check2-circle me-1"></i>Seçildi</span>
+                                    <span class="ms-3"><i class="bi bi-clock-history me-1"></i>Gönderimde imzaya düşer</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= EKLER ================= -->
+                <div id="tab-ekler" class="ebys-panel">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h6 class="section-title mb-1"><i class="bi bi-paperclip me-2"></i>Ekler</h6>
+                            <div class="small text-muted">Dosyaları ekle, türünü gör, tek tık sil.</div>
+                        </div>
+                        <span class="badge text-bg-light border"><i class="bi bi-files me-1"></i>Ek Yönetimi</span>
+                    </div>
+
+                    <input type="file" id="fileInput" name="files" multiple class="d-none" accept="application/pdf,image/*,.doc,.docx,.xls,.xlsx,.txt" />
+
+                    <div class="ebys-dropzone" id="dropzone" tabindex="0">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-cloud-arrow-up fs-4"></i>
+                            <div>
+                                <div class="fw-semibold">Sürükle bırak veya seç</div>
+                                <div class="small text-muted">PDF için anında ön izleme</div>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="btnPickFiles">
+                            <i class="bi bi-folder2-open me-2"></i>Dosya Seç
+                        </button>
+                    </div>
+
+                    <div class="alert alert-warning mt-3 d-none" id="totalSizeWarn">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Toplam ek boyutu yüksek: <b id="totalSizeText">—</b>. Gönderim süresi uzayabilir.
+                    </div>
+
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-5">
+                            <div class="ebys-cardbox">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="fw-semibold"><i class="bi bi-list-ul me-2"></i>Liste</div>
+                                    <span class="badge text-bg-light border" id="fileCount">0</span>
+                                </div>
+
+                                <ul class="list-unstyled mb-0 ebys-filelist" id="fileList">
+                                    <li class="text-muted small" id="noFiles">Henüz dosya yok.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="col-md-7">
+                            <div class="ebys-cardbox">
+                                <div class="fw-semibold mb-2"><i class="bi bi-file-earmark-pdf me-2"></i>PDF Ön İzleme</div>
+                                <div class="ebys-pdfwrap" id="pdfWrap">
+                                    <div class="text-muted small" id="pdfHint">Bir PDF seçin.</div>
+                                    <iframe id="pdfFrame" class="d-none" title="PDF Preview"></iframe>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="small text-muted mt-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Backend kaydetme eklemek istersen: Controller’da `IFormFileCollection files` alıp DB/Folder’a yazacağız.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= HOTKEY OVERLAY ================= -->
+    <div class="ebys-overlay d-none" id="hotkeyOverlay" role="dialog" aria-modal="true">
+        <div class="ebys-overlay-card">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="fw-semibold"><i class="bi bi-keyboard me-2"></i>Kısayollar</div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCloseHotkeys">
+                    <i class="bi bi-x-lg me-1"></i>Kapat
+                </button>
+            </div>
+
+            <div class="ebys-klist">
+                <div class="row">
+                    <div class="col-6"><span class="kbd">Ctrl</span> + <span class="kbd">S</span></div>
+                    <div class="col-6 text-muted">Taslak</div>
+                </div>
+                <div class="row">
+                    <div class="col-6"><span class="kbd">Ctrl</span> + <span class="kbd">Enter</span></div>
+                    <div class="col-6 text-muted">Gönder</div>
+                </div>
+                <div class="row">
+                    <div class="col-6"><span class="kbd">?</span></div>
+                    <div class="col-6 text-muted">Bu ekran</div>
+                </div>
+            </div>
+
+            <div class="small text-muted mt-3">
+                <i class="bi bi-info-circle me-1"></i>Bu ekranı kapatmak için tekrar “?” de basabilirsin.
+            </div>
+        </div>
+    </div>
+
+</form>
+
+@section Scripts {
+    <script src="https://cdn.ckeditor.com/ckeditor5/41.2.0/classic/ckeditor.js"></script>
+
+    <script>
+        (() => {
+            const LS_KEY = "ebys_create_draft_v3";
+
+            const form = document.getElementById('docForm');
+
+            const tabs = [...document.querySelectorAll('.ebys-tab')];
+            const panels = [...document.querySelectorAll('.ebys-panel')];
+
+            const konuInput = document.getElementById('konuInput');
+            const baslikInput = document.getElementById('baslikInput');
+            const aciklamaInput = document.getElementById('aciklamaInput');
+
+            const ureticiInput = document.getElementById('ureticiInput');
+            const uretimInput = document.getElementById('uretimInput');
+
+            const bilaCheck = document.getElementById('bilaCheck');
+            const tarihBox = document.getElementById('tarihBox');
+
+            const bilgiEdinme = document.getElementById('bilgiEdinmeCheck');
+            const gizlilik = document.getElementById('gizlilikCombo');
+            const gizlilikHint = document.getElementById('gizlilikHint');
+
+            const signerSelect = document.getElementById('signerSelect');
+            const signerWarn = document.getElementById('signerWarn');
+            const signerCard = document.getElementById('signerCard');
+            const signerName = document.getElementById('signerName');
+
+            const btnGoEditor = document.getElementById('btnGoEditor');
+            const btnGoPreview = document.getElementById('btnGoPreview');
+            const btnRefreshPreview = document.getElementById('btnRefreshPreview');
+            const btnSaveLocal = document.getElementById('btnSaveLocal');
+            const btnPrintA4 = document.getElementById('btnPrintA4');
+
+            const crumbStep = document.getElementById('crumbStep');
+            const crumbHint = document.getElementById('crumbHint');
+
+            const sKonu = document.getElementById('sKonu');
+            const sBaslik = document.getElementById('sBaslik');
+            const sTarih = document.getElementById('sTarih');
+            const sGizlilik = document.getElementById('sGizlilik');
+            const sUretici = document.getElementById('sUretici');
+            const summaryScore = document.getElementById('summaryScore');
+
+            const draftStatus = document.getElementById('draftStatus');
+
+            const hotkeyOverlay = document.getElementById('hotkeyOverlay');
+            const btnHotkeys = document.getElementById('btnHotkeys');
+            const btnCloseHotkeys = document.getElementById('btnCloseHotkeys');
+
+            // Ekler
+            const fileInput = document.getElementById('fileInput');
+            const dropzone = document.getElementById('dropzone');
+            const btnPickFiles = document.getElementById('btnPickFiles');
+            const fileList = document.getElementById('fileList');
+            const noFiles = document.getElementById('noFiles');
+            const fileCount = document.getElementById('fileCount');
+            const pdfFrame = document.getElementById('pdfFrame');
+            const pdfHint = document.getElementById('pdfHint');
+            const totalSizeWarn = document.getElementById('totalSizeWarn');
+            const totalSizeText = document.getElementById('totalSizeText');
+
+            // Preview
+            const pContent = document.getElementById('pContent');
+            const pKonu = document.getElementById('pKonu');
+            const pBaslik = document.getElementById('pBaslik');
+            const pImzaNotu = document.getElementById('pImzaNotu');
+            const pFooterDate = document.getElementById('pFooterDate');
+            const imzaNotu = document.getElementById('imzaNotu');
+
+            // Editor
+            const editorHidden = document.getElementById('EditorHidden');
+            const wordCount = document.getElementById('wordCount');
+            const editorRule = document.getElementById('editorRule');
+            const editorWrap = document.getElementById('editorWrap');
+
+            const modeBtns = [...document.querySelectorAll('.ebys-modebtn')];
+            const btnInsertPara = document.getElementById('btnInsertPara');
+            const btnCleanLines = document.getElementById('btnCleanLines');
+            const btnOfficialAlign = document.getElementById('btnOfficialAlign');
+
+            const noteChips = [...document.querySelectorAll('.ebys-chip')];
+
+            const CURRENT_USER_NAME = @Html.Raw(JsonSerializer.Serialize(currentUserName));
+            const CURRENT_USER_BIRIM = @Html.Raw(JsonSerializer.Serialize(currentUserBirim));
+
+            const STEP_META = {
+                1: { tab: 'ustveri',  label: 'Üst Veri',  hint: 'Meta bilgiler' },
+                2: { tab: 'editor',   label: 'Editör',   hint: 'Belge içeriği' },
+                3: { tab: 'imzanotu', label: 'İmza Notu',hint: 'Kısa not' },
+                4: { tab: 'onizleme', label: 'Ön İzleme',hint: 'Yazdırma' },
+                5: { tab: 'imzaci',   label: 'İmzacı',   hint: 'Gönderim' },
+                6: { tab: 'ekler',    label: 'Ekler',    hint: 'Dosyalar' },
+            };
+
+            function getActiveStep() {
+                const activeTab = tabs.find(x => x.classList.contains('active'));
+                const step = Number(activeTab?.dataset.step || 1);
+                return isNaN(step) ? 1 : step;
+            }
+
+            function validateStep1(showInvalid = true) {
+                let ok = true;
+
+                if (!konuInput.value.trim()) { if (showInvalid) konuInput.classList.add('is-invalid'); ok = false; }
+                else konuInput.classList.remove('is-invalid');
+
+                if (!baslikInput.value.trim()) { if (showInvalid) baslikInput.classList.add('is-invalid'); ok = false; }
+                else baslikInput.classList.remove('is-invalid');
+
+                return ok;
+            }
+
+            function setActive(name) {
+                tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+                panels.forEach(p => p.classList.toggle('active', p.id === ('tab-' + name)));
+            }
+
+            function updateHeaderUI() {
+                const step = getActiveStep();
+                const meta = STEP_META[step] || STEP_META[1];
+
+                crumbStep.innerText = meta.label;
+                crumbHint.innerText = meta.hint;
+
+                const step1Ok = validateStep1(false);
+                tabs.forEach(t => {
+                    const s = Number(t.dataset.step || 1);
+                    const locked = (s > 1) && !step1Ok;
+                    t.classList.toggle('is-locked', locked);
+                });
+            }
+
+            function openTab(name, opts = { silent: false }) {
+                setActive(name);
+                if (name === 'onizleme') refreshPreview();
+                if (name === 'ekler') refreshFileUI();
+                saveToLocal();
+                updateHeaderUI();
+            }
+
+            // Bila Tarih
+            function toggleBila() {
+                if (bilaCheck.checked) {
+                    tarihBox.value = "";
+                    tarihBox.disabled = true;
+                } else {
+                    tarihBox.disabled = false;
+                }
+                saveToLocal();
+                updateSummary();
+            }
+            bilaCheck.addEventListener('change', toggleBila);
+
+            // Bilgi Edinme => disable gizlilik
+            function toggleGizlilik() {
+                if (bilgiEdinme.checked) {
+                    gizlilik.disabled = true;
+                    gizlilik.value = "";
+                    gizlilikHint.innerText = "Bilgi edinme açık olduğu için gizlilik kapalıdır.";
+                } else {
+                    gizlilik.disabled = false;
+                    gizlilikHint.innerText = "";
+                }
+                saveToLocal();
+                updateSummary();
+            }
+            bilgiEdinme.addEventListener('change', toggleGizlilik);
+
+            // Editor init
+            let editorInstance = null;
+            let currentMode = "free";
+            let officialAlignOn = false;
+
+            const TEMPLATES = {
+                free: `<p>Metni buraya yazın…</p>`,
+                official: `<p><strong>Sayın … Başkanlığına,</strong></p><p>…</p><p>Bilgilerinize arz ederim.</p>`,
+                petition: `<p><strong>Konu:</strong> …</p><p><strong>Açıklamalar:</strong></p><p>1) …</p><p>2) …</p><p><strong>Sonuç ve Talep:</strong> …</p><p>Gereğini arz ederim.</p>`
+            };
+
+            ClassicEditor.create(document.querySelector('#editor'))
+                .then(ed => {
+                    editorInstance = ed;
+
+                    const saved = loadFromLocal();
+                    if (saved?.editorHtml) {
+                        ed.setData(saved.editorHtml);
+                        editorHidden.value = saved.editorHtml;
+                    }
+
+                    if (saved?.mode) setMode(saved.mode, true);
+                    if (saved?.officialAlignOn) setOfficialAlign(true);
+
+                    const sync = () => {
+                        const html = ed.getData();
+                        editorHidden.value = html;
+
+                        const txtLen = html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().length;
+                        wordCount.innerText = txtLen + " karakter";
+
+                        updateEditorRule(txtLen);
+                        saveToLocal();
+                        updateSummary();
+                    };
+
+                    sync();
+                    ed.model.document.on('change:data', sync);
+                });
+
+            function updateEditorRule(txtLen) {
+                const min = 120;
+                const ok = 400;
+                const max = 6000;
+
+                editorRule.classList.remove('is-warn', 'is-ok');
+
+                if (txtLen === 0) { editorRule.innerText = "İpucu: İçerik ekle (en az ~120 karakter)."; editorRule.classList.add('is-warn'); return; }
+                if (txtLen < min) { editorRule.innerText = `Kısa görünüyor: ~${min}+ karakter önerilir.`; editorRule.classList.add('is-warn'); return; }
+                if (txtLen < ok)  { editorRule.innerText = "İyi: İçerik uygun uzunlukta."; editorRule.classList.add('is-ok'); return; }
+                if (txtLen <= max){ editorRule.innerText = "İyi: Detay seviyesi yeterli."; editorRule.classList.add('is-ok'); return; }
+
+                editorRule.innerText = "Çok uzun: Gereksiz tekrar varsa kısaltabilirsin.";
+                editorRule.classList.add('is-warn');
+            }
+
+            function setMode(mode, silent = false) {
+                currentMode = mode;
+                modeBtns.forEach(b => b.classList.toggle('is-active', b.dataset.mode === mode));
+
+                if (!silent && editorInstance) {
+                    const currentTextLen = editorInstance.getData().replace(/<[^>]*>/g, '').trim().length;
+                    if (currentTextLen < 40) editorInstance.setData(TEMPLATES[mode] || TEMPLATES.free);
+                }
+                saveToLocal();
+            }
+
+            modeBtns.forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
+
+            function setOfficialAlign(forceOn = null) {
+                officialAlignOn = (forceOn !== null) ? forceOn : !officialAlignOn;
+                editorWrap.classList.toggle('is-official', officialAlignOn);
+                saveToLocal();
+            }
+            btnOfficialAlign?.addEventListener('click', () => setOfficialAlign());
+
+            btnInsertPara?.addEventListener('click', () => {
+                if (!editorInstance) return;
+                editorInstance.setData(editorInstance.getData() + "<p>…</p>");
+            });
+
+            btnCleanLines?.addEventListener('click', () => {
+                if (!editorInstance) return;
+                let html = editorInstance.getData();
+                html = html.replace(/<p>(&nbsp;|\s)*<\/p>/gi, '<p></p>').replace(/(<p>\s*<\/p>){3,}/gi, '<p></p><p></p>');
+                editorInstance.setData(html);
+            });
+
+            // Preview
+            function refreshPreview() {
+                const konu = konuInput.value.trim();
+                const baslik = baslikInput.value.trim();
+
+                pKonu.innerText = konu || "—";
+                pBaslik.innerText = baslik || "—";
+
+                pKonu.classList.toggle('is-missing', !konu);
+                pBaslik.classList.toggle('is-missing', !baslik);
+
+                pContent.innerHTML = editorInstance ? editorInstance.getData() : (editorHidden.value || "");
+
+                const note = imzaNotu.value.trim();
+                pImzaNotu.innerText = note ? ("İmza Notu (İmzacı görür): " + note) : "";
+
+                pFooterDate.innerText = new Date().toLocaleString();
+            }
+            btnRefreshPreview?.addEventListener('click', refreshPreview);
+
+            btnPrintA4?.addEventListener('click', () => { refreshPreview(); window.print(); });
+
+            // Tabs
+            tabs.forEach(t => t.addEventListener('click', () => openTab(t.dataset.tab)));
+            btnGoEditor?.addEventListener('click', () => openTab('editor'));
+            btnGoPreview?.addEventListener('click', () => openTab('onizleme'));
+
+            // Preset note chips
+            noteChips.forEach(ch => ch.addEventListener('click', () => {
+                const text = ch.getAttribute('data-note') || "";
+                if (!text) return;
+
+                if (!imzaNotu.value.trim()) imzaNotu.value = text;
+                else imzaNotu.value = (imzaNotu.value.trim().endsWith(".") ? (imzaNotu.value.trim() + " ") : (imzaNotu.value.trim() + ". ")) + text;
+
+                saveToLocal();
+            }));
+
+            // Signer card
+            function updateSignerCard() {
+                const val = signerSelect.value;
+                if (!val) { signerCard.classList.add('d-none'); signerName.innerText = "—"; return; }
+                const opt = signerSelect.options[signerSelect.selectedIndex];
+                signerName.innerText = opt?.text || "Seçildi";
+                signerCard.classList.remove('d-none');
+            }
+            signerSelect?.addEventListener('change', () => { updateSignerCard(); saveToLocal(); });
+
+            function autofillProducer() {
+                if (!ureticiInput.value.trim()) ureticiInput.value = CURRENT_USER_NAME || "Birim";
+                if (!uretimInput.value.trim()) uretimInput.value = CURRENT_USER_BIRIM || "Birim";
+            }
+
+            function updateSummary() {
+                const konu = konuInput.value.trim();
+                const baslik = baslikInput.value.trim();
+
+                sKonu.innerText = konu || "—";
+                sBaslik.innerText = baslik || "—";
+
+                const t = (!bilaCheck.checked && tarihBox.value) ? tarihBox.value : (bilaCheck.checked ? "Bila Tarih" : "—");
+                sTarih.innerText = t;
+
+                sGizlilik.innerText = gizlilik.value || (bilgiEdinme.checked ? "Bilgi Edinme (Açık)" : "—");
+                sUretici.innerText = (ureticiInput.value || CURRENT_USER_NAME || "—");
+
+                let score = 0;
+                if (konu) score++;
+                if (baslik) score++;
+                if ((editorHidden.value || "").replace(/<[^>]*>/g, '').trim().length >= 120) score++;
+                if (signerSelect.value) score++;
+
+                summaryScore.innerText = `${score}/4`;
+                summaryScore.className = "badge text-bg-light border";
+                if (score >= 3) summaryScore.classList.add('ebys-badge-ok');
+                else summaryScore.classList.add('ebys-badge-warn');
+            }
+
+            // LocalStorage
+            function collectState() {
+                return {
+                    konu: konuInput.value,
+                    baslik: baslikInput.value,
+                    aciklama: aciklamaInput.value,
+                    bilaTarih: bilaCheck.checked,
+                    tarihBox: tarihBox.value,
+                    gizlilik: gizlilik.value,
+                    bilgiEdinme: bilgiEdinme.checked,
+                    telif: document.getElementById('TelifYasasi')?.checked || false,
+                    kisisel: document.getElementById('KisiselBilgi')?.checked || false,
+                    zorunlu: document.getElementById('ZorunluHal')?.checked || false,
+                    olaganustu: document.getElementById('OlaganustuDurum')?.checked || false,
+                    imzaNotu: imzaNotu.value,
+                    signer: signerSelect.value,
+                    uretici: ureticiInput.value,
+                    uretim: uretimInput.value,
+                    editorHtml: editorInstance ? editorInstance.getData() : editorHidden.value,
+                    activeTab: tabs.find(x => x.classList.contains('active'))?.dataset.tab || 'ustveri',
+                    savedAt: Date.now(),
+                    mode: currentMode,
+                    officialAlignOn: officialAlignOn
+                };
+            }
+
+            function saveToLocal() {
+                try {
+                    const data = collectState();
+                    localStorage.setItem(LS_KEY, JSON.stringify(data));
+                    renderDraftStatus(data.savedAt);
+                } catch { }
+            }
+
+            function loadFromLocal() {
+                try {
+                    const raw = localStorage.getItem(LS_KEY);
+                    if (!raw) return null;
+                    return JSON.parse(raw);
+                } catch { return null; }
+            }
+
+            function applyState(saved) {
+                if (!saved) return;
+
+                konuInput.value = saved.konu ?? "";
+                baslikInput.value = saved.baslik ?? "";
+                aciklamaInput.value = saved.aciklama ?? "";
+
+                bilaCheck.checked = !!saved.bilaTarih;
+                tarihBox.value = saved.tarihBox ?? "";
+
+                document.getElementById('TelifYasasi').checked = !!saved.telif;
+                document.getElementById('KisiselBilgi').checked = !!saved.kisisel;
+                document.getElementById('ZorunluHal').checked = !!saved.zorunlu;
+                document.getElementById('OlaganustuDurum').checked = !!saved.olaganustu;
+
+                bilgiEdinme.checked = !!saved.bilgiEdinme;
+                gizlilik.value = saved.gizlilik ?? "";
+
+                imzaNotu.value = saved.imzaNotu ?? "";
+                signerSelect.value = saved.signer ?? "";
+
+                ureticiInput.value = saved.uretici ?? "";
+                uretimInput.value = saved.uretim ?? "";
+
+                if (saved.mode) setMode(saved.mode, true);
+                if (saved.officialAlignOn) setOfficialAlign(true);
+
+                toggleBila();
+                toggleGizlilik();
+
+                updateSignerCard();
+                updateSummary();
+
+                if (saved.savedAt) renderDraftStatus(saved.savedAt);
+
+                const tabToOpen = saved.activeTab || 'ustveri';
+                openTab(tabToOpen, { silent: true });
+            }
+
+            function renderDraftStatus(savedAt) {
+                if (!savedAt) { draftStatus.innerText = "—"; return; }
+                const diff = Math.max(0, Date.now() - savedAt);
+                const sec = Math.floor(diff / 1000);
+                const min = Math.floor(sec / 60);
+
+                let text = "";
+                if (sec < 10) text = "şimdi";
+                else if (sec < 60) text = `${sec} sn önce`;
+                else text = `${min} dk önce`;
+
+                draftStatus.innerHTML = `✔ Taslak kaydedildi <span class="muted">(${text})</span>`;
+            }
+
+            setInterval(() => {
+                const saved = loadFromLocal();
+                if (saved?.savedAt) renderDraftStatus(saved.savedAt);
+            }, 8000);
+
+            btnSaveLocal?.addEventListener('click', () => {
+                saveToLocal();
+                btnSaveLocal.classList.add('ebys-pulse');
+                setTimeout(() => btnSaveLocal.classList.remove('ebys-pulse'), 450);
+            });
+
+            // =========================
+            // EKLER
+            // =========================
+            let selectedFiles = [];
+
+            function syncFileInputToSelectedFiles() {
+                try {
+                    const dt = new DataTransfer();
+                    selectedFiles.forEach(f => dt.items.add(f));
+                    fileInput.files = dt.files;
+                } catch { }
+            }
+
+            function getFileBadge(f) {
+                const name = f.name.toLowerCase();
+                const isPdf = (f.type === "application/pdf") || name.endsWith(".pdf");
+                if (isPdf) return { label: "PDF", cls: "badge text-bg-danger" };
+                if (name.endsWith(".doc") || name.endsWith(".docx")) return { label: "DOC", cls: "badge text-bg-primary" };
+                if (name.endsWith(".xls") || name.endsWith(".xlsx")) return { label: "XLS", cls: "badge text-bg-success" };
+                if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".webp")) return { label: "IMG", cls: "badge text-bg-secondary" };
+                if (name.endsWith(".txt")) return { label: "TXT", cls: "badge text-bg-dark" };
+                return { label: "DOSYA", cls: "badge text-bg-light border text-dark" };
+            }
+
+            function setFilesFromList(list) {
+                selectedFiles = [...list];
+                syncFileInputToSelectedFiles();
+                refreshFileUI();
+                saveToLocal();
+            }
+
+            function refreshFileUI() {
+                fileCount.innerText = String(selectedFiles.length);
+
+                const totalBytes = selectedFiles.reduce((a, f) => a + (f.size || 0), 0);
+                const totalPretty = formatBytes(totalBytes);
+
+                if (totalBytes > 15 * 1024 * 1024) {
+                    totalSizeWarn.classList.remove('d-none');
+                    totalSizeText.innerText = totalPretty;
+                } else {
+                    totalSizeWarn.classList.add('d-none');
+                }
+
+                if (selectedFiles.length === 0) {
+                    noFiles.classList.remove('d-none');
+                    pdfFrame.classList.add('d-none');
+                    pdfHint.classList.remove('d-none');
+                    pdfHint.innerText = "Bir PDF seçin.";
+                    fileList.innerHTML = "";
+                    fileList.appendChild(noFiles);
+                    return;
+                }
+
+                noFiles.classList.add('d-none');
+                fileList.innerHTML = "";
+
+                selectedFiles.forEach((f, idx) => {
+                    const li = document.createElement("li");
+                    li.className = "ebys-fileitem";
+
+                    const badge = getFileBadge(f);
+                    const isPdf = badge.label === "PDF";
+
+                    li.innerHTML = `
+                        <button type="button" class="ebys-filebtn" data-index="${idx}">
+                            <i class="bi ${isPdf ? "bi-file-earmark-pdf" : "bi-file-earmark"} me-2"></i>
+                            <span class="ebys-filename">${escapeHtml(f.name)}</span>
+                            <span class="${badge.cls} ms-2">${badge.label}</span>
+                            <span class="ms-auto text-muted small">${formatBytes(f.size)}</span>
+                        </button>
+
+                        <button type="button" class="ebys-fileremove" data-remove="${idx}" title="Sil">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    `;
+                    fileList.appendChild(li);
+                });
+
+                fileList.querySelectorAll(".ebys-filebtn").forEach(btn => {
+                    btn.addEventListener("click", () => {
+                        const i = Number(btn.getAttribute("data-index"));
+                        previewFile(selectedFiles[i]);
+                    });
+                });
+
+                fileList.querySelectorAll(".ebys-fileremove").forEach(btn => {
+                    btn.addEventListener("click", () => {
+                        const i = Number(btn.getAttribute("data-remove"));
+                        selectedFiles.splice(i, 1);
+                        syncFileInputToSelectedFiles();
+                        refreshFileUI();
+                        saveToLocal();
+                    });
+                });
+
+                const firstPdf = selectedFiles.find(f => (f.type === "application/pdf") || f.name.toLowerCase().endsWith(".pdf"));
+                if (firstPdf) previewFile(firstPdf);
+                else {
+                    pdfFrame.classList.add('d-none');
+                    pdfHint.classList.remove('d-none');
+                    pdfHint.innerText = "PDF yok. PDF yüklerseniz burada ön izleme açılır.";
+                }
+            }
+
+            function previewFile(file) {
+                const isPdf = (file.type === "application/pdf") || file.name.toLowerCase().endsWith(".pdf");
+                if (!isPdf) {
+                    pdfFrame.classList.add('d-none');
+                    pdfHint.classList.remove('d-none');
+                    pdfHint.innerText = "Bu dosya PDF değil. PDF seçin.";
+                    return;
+                }
+                const url = URL.createObjectURL(file);
+                pdfFrame.src = url;
+                pdfHint.classList.add('d-none');
+                pdfFrame.classList.remove('d-none');
+            }
+
+            btnPickFiles?.addEventListener('click', () => fileInput.click());
+            fileInput?.addEventListener('change', () => {
+                if (fileInput.files && fileInput.files.length) setFilesFromList(fileInput.files);
+            });
+
+            function prevent(e) { e.preventDefault(); e.stopPropagation(); }
+
+            ["dragenter", "dragover"].forEach(evt => dropzone.addEventListener(evt, (e) => {
+                prevent(e);
+                dropzone.classList.add("is-dragover");
+            }));
+            ["dragleave", "drop"].forEach(evt => dropzone.addEventListener(evt, (e) => {
+                prevent(e);
+                dropzone.classList.remove("is-dragover");
+            }));
+            dropzone.addEventListener("drop", (e) => {
+                const dt = e.dataTransfer;
+                if (dt && dt.files && dt.files.length) setFilesFromList(dt.files);
+            });
+
+            dropzone.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    fileInput.click();
+                }
+            });
+
+            // Hotkeys overlay
+            function normalizeOverlay() {
+                if (hotkeyOverlay.classList.contains('d-none')) hotkeyOverlay.style.pointerEvents = "none";
+                else hotkeyOverlay.style.pointerEvents = "auto";
+            }
+
+            function toggleHotkeys(force = null) {
+                const show = (force !== null) ? force : hotkeyOverlay.classList.contains('d-none');
+                hotkeyOverlay.classList.toggle('d-none', !show);
+                normalizeOverlay();
+            }
+
+            btnHotkeys?.addEventListener('click', () => toggleHotkeys(true));
+            btnCloseHotkeys?.addEventListener('click', () => toggleHotkeys(false));
+            hotkeyOverlay?.addEventListener('click', (e) => { if (e.target === hotkeyOverlay) toggleHotkeys(false); });
+
+            // Submit guards
+            form.addEventListener('submit', (e) => {
+                const submitter = e.submitter || document.activeElement;
+                const fa = submitter?.getAttribute?.("formaction");
+                if (fa) form.setAttribute("action", fa);
+
+                editorHidden.value = editorInstance ? editorInstance.getData() : (editorHidden.value || "");
+                syncFileInputToSelectedFiles();
+
+                autofillProducer();
+                if (!aciklamaInput.value.trim()) aciklamaInput.value = '—';
+                if (!ureticiInput.value.trim()) ureticiInput.value = CURRENT_USER_NAME || 'Birim';
+                if (!uretimInput.value.trim()) uretimInput.value = CURRENT_USER_BIRIM || '—';
+
+                const isSend = (submitter && submitter.id === "btnSend");
+
+                if (isSend) {
+                    const ok1 = validateStep1(true);
+                    if (!ok1) {
+                        e.preventDefault();
+                        openTab('ustveri');
+                        updateHeaderUI();
+                        return;
+                    }
+
+                    if (!signerSelect.value) {
+                        e.preventDefault();
+                        signerWarn?.classList.remove('d-none');
+                        openTab('imzaci');
+                        updateHeaderUI();
+                        return;
+                    }
+
+                    signerWarn?.classList.add('d-none');
+                } else {
+                    signerWarn?.classList.add('d-none');
+                }
+
+                saveToLocal();
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key.toLowerCase() === 's') {
+                    e.preventDefault();
+                    document.getElementById("btnDraft")?.click();
+                }
+                if (e.ctrlKey && e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById("btnSend")?.click();
+                }
+
+                const isTyping = ["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName || "");
+                if (!isTyping && e.key === '?') {
+                    e.preventDefault();
+                    toggleHotkeys();
+                }
+                if (e.key === "Escape") toggleHotkeys(false);
+            });
+
+            // Restore on load
+            autofillProducer();
+            normalizeOverlay();
+
+            const saved = loadFromLocal();
+            applyState(saved);
+            if (saved?.activeTab === "onizleme") refreshPreview();
+
+            [konuInput, baslikInput, aciklamaInput, imzaNotu, gizlilik].forEach(el => {
+                el.addEventListener('input', () => { saveToLocal(); updateHeaderUI(); updateSummary(); });
+                el.addEventListener('change', () => { saveToLocal(); updateHeaderUI(); updateSummary(); });
+            });
+
+            updateHeaderUI();
+            updateSummary();
+            updateSignerCard();
+
+            function escapeHtml(s) {
+                return String(s).replace(/[&<>"']/g, (m) => ({
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                    "'": "&#039;"
+                }[m]));
+            }
+
+            function formatBytes(bytes) {
+                if (!bytes || bytes === 0) return "0 B";
+                const k = 1024;
+                const sizes = ["B", "KB", "MB", "GB"];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return (bytes / Math.pow(k, i)).toFixed(i === 0 ? 0 : 1) + " " + sizes[i];
+            }
+
+        })();
+    </script>
+
+    <style>
+        /* ---- SAME CSS YOU HAD ---- */
+        :root {
+            --glass-bg: rgba(255,255,255,.62);
+            --glass-bd: rgba(255,255,255,.35);
+            --glass-shadow: 0 18px 50px rgba(0,0,0,.12);
+            --ink: #0f172a;
+            --muted: #64748b;
+            --blue: #0d6efd;
+        }
+
+        body {
+            background: radial-gradient(1200px 600px at 10% 0%, rgba(13,110,253,.14), transparent 55%), radial-gradient(900px 520px at 100% 10%, rgba(99,102,241,.12), transparent 55%), #f6f7fb;
+        }
+
+        .badge.text-bg-light.border,
+        #summaryScore, #fileCount {
+            background: rgba(255,255,255,.92) !important;
+            color: #0f172a !important;
+            border-color: rgba(15,23,42,.18) !important;
+        }
+
+        .ebys-topbar-wrap {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            padding: 6px 10px 0 10px;
+        }
+
+        .ebys-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 16px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-bd);
+            box-shadow: var(--glass-shadow);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .ebys-topnote {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .ebys-savehint {
+            font-size: .82rem;
+            color: var(--muted);
+            background: rgba(255,255,255,.55);
+            border: 1px solid rgba(15,23,42,.08);
+            border-radius: 999px;
+            padding: 6px 10px;
+            width: fit-content;
+        }
+
+            .ebys-savehint .muted {
+                color: var(--muted);
+            }
+
+        .ebys-hotkeybtn {
+            border: 1px solid rgba(15,23,42,.08);
+            background: rgba(255,255,255,.55);
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: .82rem;
+            color: var(--ink);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ebys-topbar-left {
+            display: grid;
+            gap: 8px;
+            min-width: 320px;
+        }
+
+        .ebys-title-main {
+            font-weight: 800;
+            color: var(--ink);
+            display: flex;
+            align-items: center;
+            font-size: .95rem;
+        }
+
+        .ebys-title-sub {
+            color: var(--muted);
+            font-size: .78rem;
+            margin-top: 0;
+        }
+
+        .ebys-breadcrumb {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 9px;
+            border-radius: 999px;
+            background: rgba(255,255,255,.6);
+            border: 1px solid rgba(15,23,42,.08);
+            width: fit-content;
+        }
+
+            .ebys-breadcrumb .crumb {
+                font-size: .82rem;
+                color: var(--ink);
+                font-weight: 650;
+                white-space: nowrap;
+            }
+
+                .ebys-breadcrumb .crumb.muted {
+                    color: var(--muted);
+                    font-weight: 600;
+                }
+
+            .ebys-breadcrumb .sep {
+                color: rgba(15,23,42,.35);
+                font-size: .82rem;
+            }
+
+        .ebys-topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ebys-userpill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 999px;
+            background: rgba(255,255,255,.66);
+            border: 1px solid rgba(15,23,42,.08);
+            min-width: 205px;
+        }
+
+            .ebys-userpill .avatar {
+                width: 30px;
+                height: 30px;
+                border-radius: 999px;
+                display: grid;
+                place-items: center;
+                background: rgba(13,110,253,.12);
+                border: 1px solid rgba(13,110,253,.20);
+                color: var(--blue);
+            }
+
+            .ebys-userpill .meta .name {
+                font-weight: 800;
+                color: var(--ink);
+                font-size: .85rem;
+                line-height: 1.1;
+                max-width: 180px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .ebys-userpill .meta .dept {
+                font-size: .72rem;
+                color: var(--muted);
+                line-height: 1.1;
+                max-width: 180px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+        .ebys-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .ebys-btn {
+            border-radius: 12px;
+            padding: 8px 12px;
+            box-shadow: 0 10px 24px rgba(0,0,0,.08);
+            transition: transform .18s ease, box-shadow .18s ease;
+        }
+
+            .ebys-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 14px 30px rgba(0,0,0,.10);
+            }
+
+        .ebys-shell {
+            border-radius: 18px;
+            background: #fff;
+            box-shadow: 0 22px 70px rgba(0,0,0,.14);
+            overflow: hidden;
+        }
+
+        .ebys-left {
+            background: #f7f8fb;
+        }
+
+        .ebys-left-inner {
+            padding: 14px;
+        }
+
+        .ebys-right-inner {
+            padding: 18px;
+        }
+
+        .section-title {
+            font-weight: 800;
+            color: var(--ink);
+        }
+
+        .ebys-tablist {
+            display: grid;
+            gap: 8px;
+        }
+
+        .ebys-tab {
+            width: 100%;
+            border: 0;
+            background: transparent;
+            padding: 14px;
+            border-radius: 14px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            transition: transform .18s ease, background .18s ease, box-shadow .18s ease, opacity .18s ease;
+            position: relative;
+        }
+
+            .ebys-tab i {
+                font-size: 1.05rem;
+                color: #0d6efd;
+            }
+
+            .ebys-tab .label {
+                font-weight: 800;
+                line-height: 1.1;
+            }
+
+            .ebys-tab .hint {
+                font-size: .82rem;
+                color: #6c757d;
+            }
+
+        .ebys-stepchip {
+            margin-left: auto;
+            font-size: .78rem;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(13,110,253,.10);
+            color: #0d6efd;
+            border: 1px solid rgba(13,110,253,.15);
+        }
+
+        .ebys-tab:hover {
+            background: #eef3ff;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 26px rgba(0,0,0,.08);
+        }
+
+        .ebys-tab.active {
+            background: #e7efff;
+            box-shadow: inset 0 0 0 1px rgba(13,110,253,.20);
+        }
+
+        .ebys-tab.is-locked {
+            opacity: .55;
+        }
+
+            .ebys-tab.is-locked:hover {
+                transform: none;
+                box-shadow: none;
+                background: transparent;
+            }
+
+            .ebys-tab.is-locked::after {
+                content: "🔒";
+                position: absolute;
+                right: 12px;
+                top: 10px;
+                font-size: .9rem;
+                opacity: .9;
+            }
+
+        .ebys-panel {
+            display: none;
+        }
+
+            .ebys-panel.active {
+                display: block;
+                animation: ebysFadeUp .22s ease;
+            }
+
+        @@keyframes ebysFadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ebys-section {
+            background: #fff;
+            border: 1px solid #eef0f3;
+            border-radius: 16px;
+            padding: 14px;
+        }
+
+        .ebys-section-head .title {
+            font-weight: 800;
+            color: var(--ink);
+            display: flex;
+            align-items: center;
+        }
+
+        .ebys-section-head .desc {
+            color: var(--muted);
+            font-size: .82rem;
+            margin-top: 2px;
+        }
+
+        .ebys-field .field-hint {
+            display: none;
+            margin-top: 6px;
+            font-size: .78rem;
+            color: var(--muted);
+        }
+
+        .ebys-field.has-focus .field-hint {
+            display: block;
+        }
+
+        .ebys-cardbox {
+            background: #f9fafb;
+            border: 1px solid #eef0f3;
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .ebys-summary {
+            background: #fff;
+            border: 1px solid #eef0f3;
+            border-radius: 16px;
+            padding: 14px;
+            box-shadow: 0 14px 40px rgba(0,0,0,.06);
+        }
+
+        .ebys-srow {
+            display: grid;
+            grid-template-columns: 90px 1fr;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px dashed #eef0f3;
+        }
+
+            .ebys-srow:last-child {
+                border-bottom: 0;
+            }
+
+            .ebys-srow .k {
+                color: var(--muted);
+                font-size: .82rem;
+            }
+
+            .ebys-srow .v {
+                color: var(--ink);
+                font-weight: 650;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+        .ebys-tip {
+            border-radius: 16px;
+            padding: 14px;
+            border: 1px solid #eef0f3;
+            background: #f9fafb;
+        }
+
+        .ebys-badge-ok {
+            border-color: rgba(25,135,84,.25) !important;
+        }
+
+        .ebys-badge-warn {
+            border-color: rgba(255,193,7,.35) !important;
+        }
+
+        .ebys-toolrow {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .ebys-modegroup .ebys-modebtn.is-active {
+            background: rgba(13,110,253,.10);
+            border-color: rgba(13,110,253,.35);
+            color: #0d6efd;
+        }
+
+        .ebys-editor-wrap {
+            border: 1px solid #dee2e6;
+            border-radius: 14px;
+            padding: 10px;
+            background: #fff;
+        }
+
+            .ebys-editor-wrap.is-official .ck-content {
+                line-height: 1.6;
+                font-size: 14.5px;
+            }
+
+                .ebys-editor-wrap.is-official .ck-content p {
+                    text-align: justify;
+                }
+
+        #editorRule {
+            font-weight: 650;
+        }
+
+            #editorRule.is-ok {
+                color: rgba(25,135,84,1);
+            }
+
+            #editorRule.is-warn {
+                color: rgba(255,193,7,1);
+            }
+
+        .ebys-chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .ebys-chip {
+            border: 1px solid rgba(15,23,42,.12);
+            background: rgba(255,255,255,.8);
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: .82rem;
+        }
+
+            .ebys-chip:hover {
+                background: rgba(13,110,253,.06);
+                border-color: rgba(13,110,253,.25);
+            }
+
+        .ebys-a4wrap {
+            background: #f3f5fb;
+            border: 1px solid #eef0f3;
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .ebys-a4 {
+            background: #fff;
+            border: 1px solid rgba(15,23,42,.08);
+            border-radius: 12px;
+            box-shadow: 0 18px 50px rgba(0,0,0,.12);
+            overflow: hidden;
+        }
+
+        .ebys-a4-header {
+            padding: 16px 18px;
+            border-bottom: 1px solid rgba(15,23,42,.08);
+        }
+
+            .ebys-a4-header .topline {
+                font-weight: 800;
+                color: var(--ink);
+            }
+
+            .ebys-a4-header .subline {
+                color: var(--muted);
+                font-size: .88rem;
+                margin-top: 2px;
+            }
+
+            .ebys-a4-header .meta {
+                display: flex;
+                justify-content: space-between;
+                gap: 14px;
+                margin-top: 12px;
+                padding-top: 12px;
+                border-top: 1px dashed rgba(15,23,42,.12);
+            }
+
+            .ebys-a4-header .k {
+                color: var(--muted);
+                font-size: .78rem;
+            }
+
+            .ebys-a4-header .v {
+                font-weight: 700;
+                color: var(--ink);
+            }
+
+                .ebys-a4-header .v.is-missing {
+                    background: rgba(255,193,7,.25);
+                    border-radius: 8px;
+                    padding: 2px 6px;
+                }
+
+        .ebys-a4-body {
+            padding: 18px;
+            min-height: 340px;
+        }
+
+        .ebys-a4-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 18px;
+            border-top: 1px solid rgba(15,23,42,.08);
+            color: var(--muted);
+            font-size: .82rem;
+        }
+
+        @@media print {
+            body * {
+                visibility: hidden !important;
+            }
+
+            .ebys-a4, .ebys-a4 * {
+                visibility: visible !important;
+            }
+
+            .ebys-a4 {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+
+            .ebys-a4wrap {
+                background: transparent !important;
+                border: none !important;
+                padding: 0 !important;
+            }
+
+            @@page {
+                margin: 12mm;
+            }
+        }
+
+        .ebys-flow {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f9fafb;
+            border: 1px solid #eef0f3;
+            border-radius: 14px;
+            padding: 10px 12px;
+        }
+
+            .ebys-flow .node {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                border: 1px solid rgba(15,23,42,.10);
+                background: #fff;
+                border-radius: 999px;
+                padding: 6px 10px;
+                font-weight: 700;
+                color: var(--ink);
+                font-size: .82rem;
+            }
+
+                .ebys-flow .node.is-active {
+                    border-color: rgba(13,110,253,.35);
+                    background: rgba(13,110,253,.06);
+                }
+
+            .ebys-flow .sep {
+                color: rgba(15,23,42,.35);
+            }
+
+        .ebys-signer-card {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            border: 1px solid rgba(13,110,253,.20);
+            background: rgba(13,110,253,.06);
+            border-radius: 14px;
+            padding: 12px;
+        }
+
+            .ebys-signer-card .icon {
+                width: 40px;
+                height: 40px;
+                border-radius: 12px;
+                display: grid;
+                place-items: center;
+                background: rgba(13,110,253,.12);
+                border: 1px solid rgba(13,110,253,.18);
+                color: #0d6efd;
+                font-size: 1.2rem;
+            }
+
+            .ebys-signer-card .name {
+                font-weight: 900;
+                color: var(--ink);
+            }
+
+        .ebys-dropzone {
+            border: 2px dashed rgba(13,110,253,.25);
+            border-radius: 16px;
+            padding: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            background: rgba(13,110,253,.03);
+            transition: background .18s ease, border-color .18s ease, transform .18s ease;
+        }
+
+            .ebys-dropzone:hover {
+                background: rgba(13,110,253,.05);
+                border-color: rgba(13,110,253,.40);
+            }
+
+            .ebys-dropzone.is-dragover {
+                background: rgba(13,110,253,.08);
+                border-color: rgba(13,110,253,.55);
+                transform: scale(1.01);
+            }
+
+        .ebys-filelist {
+            display: grid;
+            gap: 10px;
+        }
+
+        .ebys-fileitem {
+            display: grid;
+            grid-template-columns: 1fr 42px;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .ebys-filebtn {
+            border: 1px solid #eef0f3;
+            background: #fff;
+            border-radius: 12px;
+            padding: 10px 12px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+            text-align: left;
+        }
+
+            .ebys-filebtn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 10px 22px rgba(0,0,0,.08);
+                border-color: rgba(13,110,253,.25);
+            }
+
+        .ebys-filename {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 240px;
+        }
+
+        .ebys-fileremove {
+            border: 1px solid #eef0f3;
+            background: #fff;
+            border-radius: 10px;
+            width: 38px;
+            height: 38px;
+            display: grid;
+            place-items: center;
+            transition: background .16s ease, border-color .16s ease;
+        }
+
+            .ebys-fileremove:hover {
+                background: rgba(220,53,69,.08);
+                border-color: rgba(220,53,69,.20);
+            }
+
+        .ebys-pdfwrap {
+            border: 1px solid #eef0f3;
+            border-radius: 14px;
+            height: 440px;
+            background: #fff;
+            overflow: hidden;
+            position: relative;
+            padding: 10px;
+        }
+
+        #pdfFrame {
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        .ebys-minihelp {
+            border-top: 1px solid #eef0f3;
+            padding-top: 12px;
+        }
+
+        .ebys-pulse {
+            animation: ebysPulse .45s ease;
+        }
+
+        @@keyframes ebysPulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.02);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .ebys-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,.45);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            display: grid;
+            place-items: center;
+            z-index: 9999;
+            padding: 18px;
+            pointer-events: none;
+        }
+
+            .ebys-overlay:not(.d-none) {
+                pointer-events: auto;
+            }
+
+        .ebys-overlay-card {
+            width: min(560px, 92vw);
+            background: rgba(255,255,255,.92);
+            border: 1px solid rgba(255,255,255,.55);
+            border-radius: 18px;
+            box-shadow: 0 22px 70px rgba(0,0,0,.25);
+            padding: 14px;
+        }
+
+        .kbd {
+            display: inline-block;
+            border: 1px solid rgba(15,23,42,.18);
+            border-bottom-width: 2px;
+            border-radius: 8px;
+            padding: 2px 8px;
+            font-weight: 800;
+            background: #fff;
+            margin-right: 4px;
+        }
+
+        .ebys-klist .row {
+            padding: 8px 4px;
+            border-bottom: 1px dashed rgba(15,23,42,.12);
+        }
+
+            .ebys-klist .row:last-child {
+                border-bottom: 0;
+            }
+
+        @@media (max-width: 992px) {
+            .ebys-topbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .ebys-topbar-right {
+                justify-content: space-between;
+                flex-wrap: wrap;
+            }
+
+            .ebys-userpill {
+                min-width: unset;
+                flex: 1;
+            }
+        }
+    </style>
+}
