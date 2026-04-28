@@ -112,7 +112,7 @@ Aşağıdaki ekran görüntüleri, uygulamanın temel modüllerini göstermekted
 |---|---|
 | <img src="docs/screenshots/10-belge-olusturma-formu.jpg" alt="Belge Oluşturma Formu" width="450"> | <img src="docs/screenshots/20-imzalama-ekrani.jpg" alt="İmzalama Ekranı" width="450"> |
 
-<details>
+
 <summary><strong>Detaylı ekran görüntüleri ve açıklamaları</strong></summary>
 
 ### 1. Karşılama Ekranı
@@ -247,7 +247,6 @@ Belge gönderildikten sonra oluşan durum bilgisinin takip edildiği listedir. K
 
 Belge onaylandığında veya reddedildiğinde belgeyi oluşturan kullanıcıya gönderilen bilgilendirme e-postasını gösterir. Bu özellik, belge sürecinin kullanıcıya dış bildirim olarak aktarılmasını sağlar.
 
-</details>
 
 ## Kurulum
 
