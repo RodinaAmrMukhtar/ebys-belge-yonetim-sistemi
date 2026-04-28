@@ -229,19 +229,13 @@ Belge gönderildikten sonra oluşan durum bilgisinin takip edildiği listedir. K
 
 İmzacı rolündeki kullanıcı için bekleyen belgeleri gösterir. Onay sürecine dahil olan belgeler bu bölümden seçilip işleme alınabilir.
 
-### 20. İmzalama Ekranı
-
-<img src="docs/screenshots/20-imzalama-ekrani.jpg" alt="İmzalama Ekranı" width="800">
-
-İmzacı kullanıcının belge detaylarını görüntülediği ve belge hakkında karar verebildiği işlem ekranıdır. Bu bölüm onay/red sürecinin merkezinde yer alır.
-
-### 21. İmza Karar Ekranı
+### 20. İmza Karar Ekranı
 
 <img src="docs/screenshots/21-imza-karar-ekrani.jpg" alt="İmza Karar Ekranı" width="800">
 
 İmzacı tarafından belgenin incelendiği ve süreç sonucunun belirlendiği ekrandır. Kullanıcı belgenin içeriğini, notlarını ve işlem seçeneklerini bu bölümde görür.
 
-### 22. E-posta Bildirimi
+### 21. E-posta Bildirimi
 
 <img src="docs/screenshots/22-eposta-bildirimi.jpg" alt="E-posta Bildirimi" width="800">
 
@@ -255,7 +249,7 @@ Projeyi yerel ortamda çalıştırmak için aşağıdaki adımlar izlenebilir.
 ### 1. Depoyu klonlayın
 
 ```bash
-git clone https://github.com/kullanici-adiniz/ebys-belge-yonetim-sistemi.git
+git clone https://github.com/RodinaAmrMukhtar/ebys-belge-yonetim-sistemi.git
 cd ebys-belge-yonetim-sistemi
 ```
 
@@ -291,15 +285,6 @@ dotnet run
 
 Uygulama çalıştıktan sonra tarayıcı üzerinden verilen localhost adresi açılabilir.
 
-## Güvenlik Notları
-
-Bu proje GitHub’a yüklenmeden önce aşağıdaki noktalara dikkat edilmelidir:
-
-- `appsettings.json` içinde gerçek API anahtarı, e-posta şifresi veya bağlantı bilgisi bırakılmamalıdır.
-- Gizli bilgiler **User Secrets**, ortam değişkenleri veya güvenli yapılandırma servisleri üzerinden verilmelidir.
-- `bin/`, `obj/`, `.vs/` gibi derleme ve IDE klasörleri repoya eklenmemelidir.
-- Ekran görüntülerinde görünen gerçek e-posta adresleri veya kişisel bilgiler gerekiyorsa bulanıklaştırılmalıdır.
-
 ## Akademik Kazanımlar
 
 Bu proje aşağıdaki yazılım geliştirme konularını uygulamalı şekilde göstermektedir:
@@ -312,16 +297,6 @@ Bu proje aşağıdaki yazılım geliştirme konularını uygulamalı şekilde g�
 - E-posta bildirimi ile süreç takibi
 - Kullanıcı dostu arayüz tasarımı
 - Resmi belge süreçlerinin dijitalleştirilmesi
-
-## Geliştirilebilir Yönler
-
-- Çok aşamalı imza hiyerarşisi
-- Detaylı arama ve filtreleme seçenekleri
-- Belge ekleri için gelişmiş ön izleme
-- Daha kapsamlı yetkilendirme politikaları
-- Gelişmiş arşiv ve denetim kayıtları
-- Birim bazlı raporlama ekranları
-- Bildirim şablonlarının özelleştirilmesi
 
 ## Lisans
 
